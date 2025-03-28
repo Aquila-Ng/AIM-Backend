@@ -1,0 +1,45 @@
+# Node.js dependencies
+/node_modules/
+
+# Environment variables file
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDE/editor directories and files
+.vscode/
+.idea/
+
+# npm package lock file (optional, can be kept depending on your needs)
+package-lock.json
+
+# Temporary build or output directories
+/dist/
+/build/
+
+# Test directories
+/coverage/
+
+# Debugging
+/.vscode/
+*.tgz
+
+# Optional, if you have any generated files
+*.tgz
+
+# Docker-related
+docker-compose.override.yml
+*.env.*
+
+# Serverless Framework
+.serverless/
+
+# Firebase-related
+firebase-debug.log
+.firebaserc
