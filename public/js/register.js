@@ -1,7 +1,9 @@
 const form = document.getElementById('registerForm');
+const errorMessage = document.getElementById('errorMessage')
 const email = document.getElementById('email');
 const password = document.getElementById('password');
 const confirmPassword = document.getElementById('confirmPassword');
+
 
 // Regular expression for email validation (basic pattern)
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -38,5 +40,37 @@ form.addEventListener('submit', function(event) {
     // If form is invalid, prevent submission
     if (!isValid) {
         event.preventDefault();
+    }
+    else{
+        fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email.value,
+                password: password.value
+            })
+        })
+        .then (res => {
+            if (!res.ok){
+                return res.json().then(err => {
+                    throw err;
+                })
+            }
+            return res.json();
+        })
+        .then (data => {
+            // Handle successful registration
+            errorMessage.className = 'alert alert-success';
+            errorMessage.textContent = 'Registration successful!';
+            errorMessage.style.display = 'block';
+        })
+        .catch (err => {
+            // Handle errors from server
+            console.error('Registration error: ', err);
+            errorMessage.textContent = err.message || 'An error occurred during registration';
+            errorMessage.style.display = 'block';
+        });
     }
 });

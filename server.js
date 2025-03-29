@@ -28,6 +28,7 @@ app.get('/api/protected', authenticateToken, (req, res) => {
 app.get('/', async (req, res) => {res.sendFile(path.join(__dirname, './public', 'index.html'));});
 app.get('/login', (req, res) => {res.sendFile(path.join(__dirname, './public', 'login.html'));});
 app.get('/register', (req, res) => {res.sendFile(path.join(__dirname, './public', 'register.html'));});
+app.get('/home', (req, res) => {res.sendFile(path.join(__dirname, './public', 'home.html'))})
 
 // Start server only if DB Connection is successful
 connectDB().then(() => {

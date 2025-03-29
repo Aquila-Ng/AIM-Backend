@@ -6,19 +6,20 @@ const path = require('path');
 
 dotenv.config({path : path.join(__dirname, '../.env')});
 
-const jwtSecret = process.env.SECRET;
+const jwtSecret = process.env.JWT_SECRET;
 
 function hashPassword(password, salt){
-    return crypto.createHmac(password, salt).update(password).digest('hex');
+    return crypto.createHmac('sha256', salt).update(password).digest('hex');
 }
 
 async function registerUser(req, res){
     try {
         const { email, password } = req.body;
         const salt = crypto.randomBytes(16).toString('hex');
-        const hashPassword = hashPassword(password, salt);
+        const hashedPassword = hashPassword(password, salt);
 
-        const userId = await authModel.createUser(email, hashPassword, salt);
+        const userId = await authModel.createUser(email, hashedPassword, salt);
+
         res.status(201).json({ message: 'User registered succesfully', userId });
     }
     catch (err) {
@@ -30,14 +31,13 @@ async function loginUser(req, res) {
     try{
         const {email, password} = req.body;
         const user = await authModel.findUserByEmail(email);
-
         if(!user){
             return res.status(401).json({ error: 'Invalid credentials'});
         }
 
-        const hashPassword = hashPassword(password, user.salt);
+        const hashedPassword = hashPassword(password, user.salt);
 
-        if (hashPassword !== user.password) {
+        if (hashedPassword !== user.password) {
             return res.status(401).json({ error: 'Invalid Credentials'});
         }
 
