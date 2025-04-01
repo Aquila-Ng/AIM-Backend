@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Help Request</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .form-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h3 class="text-center mb-4">Request Assistance</h3>
+            <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+            <form id="requestForm">
+                <div class="mb-3">
+                    <label for="taskType" class="form-label">Select Assistance Type</label>
+                    <select id="taskType" class="form-select" required>
+                        <option value="" disabled selected>Select an option</option>
+                        <option value="groceries">Purchasing Groceries</option>
+                        <option value="laundry">Doing Laundry</option>
+                        <option value="housekeeping">Housekeeping</option>
+                        <option value="transport">Transportation Assistance</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="otherRequestContainer" style="display: none;">
+                    <label for="otherRequest" class="form-label">Please specify</label>
+                    <input type="text" id="otherRequest" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label for="comments" class="form-label">Additional Comments</label>
+                    <textarea id="comments" class="form-control" rows="3" placeholder="Enter any specific details..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Submit Request</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('requestType').addEventListener('change', function () {
+            const otherRequestContainer = document.getElementById('otherRequestContainer');
+            if (this.value === 'other') {
+                otherRequestContainer.style.display = 'block';
+                document.getElementById('otherRequest').setAttribute('required', 'true');
+            } else {
+                otherRequestContainer.style.display = 'none';
+                document.getElementById('otherRequest').removeAttribute('required');
+            }
+        });
+
+        document.getElementById('helpRequestForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            alert('Your request has been submitted successfully!');
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/createRequest.js"></script>
+</body>
+</html>

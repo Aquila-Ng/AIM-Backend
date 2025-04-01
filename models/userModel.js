@@ -1,54 +1,57 @@
-const { pool } = require('../config/db.js');
+const { pool } = require("../config/db");
+const crypto = require("crypto");
 
-// Function to test database query
-const testQuery = async () => {
-    try {   
-        const res = await pool.query('SELECT current_database();');
-        return res.rows;
-    } catch (err) {
-        console.error('Query error: \n', err);
+async function findUserById(userId) {
+  const query = `
+    SELECT
+          id, email, first_name, last_name, age, sex, height, weight,
+          blind_vision_difficulty,
+          deaf_hearing_difficulty,
+          difficulty_walking
+          -- Add any other relevant fields from your 'users' table used for matching
+          -- e.g., is_available_to_help (BOOLEAN), difficulty_errands (BOOLEAN)
+      FROM users
+      WHERE id = $1 LIMIT 1;`;
+  const values = [userId];
+  try {
+    const result = await pool.query(query, values);
+    if (result.rows.length === 0) {
+      return null;
     }
-};
+    return result.rows[0];
+  } catch (err) {
+    console.error(`Error finding user by ID (${userId}): \n`, err);
+    throw err;
+  }
+}
 
-// Function to get all users from the database
-const getAllUsers = async () => {
-    try {
-      const result = await pool.query('SELECT * FROM users LIMIT 50');
-      return result.rows;  // Return the result rows
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      throw err;
-    }
-  };
-  
-  // Function to get a user by ID
-  const getUserById = async (id) => {
-    try {
-      const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
-      return result.rows[0];  // Return the first user object
-    } catch (err) {
-      console.error(`Error fetching user with ID ${id}:`, err);
-      throw err;
-    }
-  };
-  
-  // Function to add a new user
-  const addUser = async (name, email) => {
-    try {
-      const result = await pool.query(
-        'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id',
-        [name, email]
-      );
-      return result.rows[0].id;  // Return the ID of the newly created user
-    } catch (err) {
-      console.error('Error adding user:', err);
-      throw err;
-    }
-  };
+async function findPotentialHelpers(requesterId) {
+  const query = `
+    SELECT
+        id, email, first_name, last_name, age, sex, height, weight,
+        blind_vision_difficulty,
+        deaf_hearing_difficulty,
+        difficulty_walking
+        -- Add any other relevant fields, e.g., is_available_to_help
+        -- Add difficulty_errands if it exists and is relevant to filtering helpers
+    FROM users
+    WHERE id != $1
+    -- Add conditions to filter potential helpers if needed
+    -- e.g., AND is_available_to_help = TRUE
+    -- e.g., AND difficulty_errands = FALSE (if helpers with this difficulty cannot help)
+    ;`;
+
+  const values = [requesterId];
+  try {
+    const result = await pool.query(query, values);
+    return result.rows;
+  } catch (err) {
+    console.error("Error finding helpers: \n", err);
+    throw err;
+  }
+}
 
 module.exports = {
-    testQuery,
-    getAllUsers,
-    getUserById,
-    addUser
+  findUserById,
+  findPotentialHelpers,
 };

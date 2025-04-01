@@ -4,10 +4,10 @@ const path = require('path');
 
 dotenv.config({path : path.join(__dirname, '../.env')});
 
-const jwtSecret = process.env.SECRET;
+const jwtSecret = process.env.JWT_SECRET;
 
 function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
+    const authHeader = req.headers['authorisation'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token == null) {
