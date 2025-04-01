@@ -14,11 +14,13 @@ function hashPassword(password, salt){
 
 async function registerUser(req, res){
     try {
-        const { email, password } = req.body;
+        const { email, password, firstName, lastName, age, sex, height, weight, blindVision, deafHearing, difficultyWalking } = req.body;
         const salt = crypto.randomBytes(16).toString('hex');
         const hashedPassword = hashPassword(password, salt);
 
-        const userId = await authModel.createUser(email, hashedPassword, salt);
+        const userId = await authModel.createUser({
+            email, hashedPassword, salt, firstName, lastName, age, sex, height, weight, blindVision, deafHearing, difficultyWalking
+        });
 
         res.status(201).json({ message: 'User registered succesfully', userId });
     }

@@ -27,3 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/'
     })
 })
+
+document.getElementById('logoutButton').addEventListener('click', () => {
+    localStorage.removeItem('jwToken');
+
+    window.location.href = '/';
+});
