@@ -34,6 +34,8 @@ const NEED_FIELDS = [
  */
 function calculateCompatibilityScore(requesterProfile, helperProfile, geoDistanceKm = null) {
     let score = 0;
+    console.log(requesterProfile);
+    console.log(helperProfile);
 
     // --- Optional: Check for disqualifying factors in helper ---
     // Example: If a helper has difficulty with errands, they might be disqualified
@@ -91,22 +93,27 @@ async function generateIdealHelperProfile(requesterProfile, taskType, comments) 
 
     // Construct the prompt using template literals and native data
     const prompt = `
-        Analyze the following help request and requester profile to describe the ideal characteristics of a person who could best fulfill this request.
-        Focus on skills, capabilities, personality traits, and any relevant demographic factors suggested by the request. Keep the description concise (2-3 sentences).
+        Analyze the following help request and requester profile to determine the ideal characteristics of a helper who could best fulfill this request.  
 
-        Requester Profile:
-        - Age: ${requesterProfile.age || 'N/A'}
-        - Sex: ${requesterProfile.sex || 'N/A'}
-        - Vision Difficulty: ${requesterProfile.blind_vision_difficulty ? 'Yes' : 'No'}
-        - Hearing Difficulty: ${requesterProfile.deaf_hearing_difficulty ? 'Yes' : 'No'}
-        - Walking Difficulty: ${requesterProfile.difficulty_walking ? 'Yes' : 'No'}
-        (Add other relevant profile fields here using the same format)
+        Focus on relevant skills, capabilities, personality traits, and demographic factors suggested by the request. Ensure the response strictly follows the specified format.  
 
-        Request Details:
-        - Task Type: ${taskType}
-        - Requester Comments: ${comments}
+        Requester Profile:  
+        - Age: ${requesterProfile.age || 'N/A'}  
+        - Sex: ${requesterProfile.sex || 'N/A'}  
+        - Vision Difficulty: ${requesterProfile.blind_vision_difficulty ? 'Yes' : 'No'}  
+        - Hearing Difficulty: ${requesterProfile.deaf_hearing_difficulty ? 'Yes' : 'No'}  
+        - Walking Difficulty: ${requesterProfile.difficulty_walking ? 'Yes' : 'No'}  
 
-        Ideal Helper Characteristics Description:
+        Request Details:  
+        - Task Type: ${taskType}  
+        - Requester Comments: ${comments}  
+
+        **Respond with the Ideal Helper Characteristics Profile in the following format:**  
+        •	Age: [Male/Female]
+        •	Sex: [Male/Female]
+        •	Vision Difficulty: [True/False]
+        •	Hearing Difficulty: [True/False]
+        •	Walking Difficulty: [True/False]
         `;
 
     try {
@@ -149,7 +156,7 @@ async function findAndAssignMatch(requestId) {
         // 1. Fetch Request Details
         const request = await requestModel.findRequestById(requestId);
         if (!request) {
-            console.error(`Matching Error: Request ID ${requestId} not found.`);
+            console.error(`Matching Error: Request ID ${requestId} not found.\n`);
             // No request to update, just log and exit
             return;
         }
@@ -159,15 +166,15 @@ async function findAndAssignMatch(requestId) {
         }
 
         // 2. Fetch Requester Profile
-        const requesterProfile = await userModel.findUserById(request.requester_user_id);
+        const requesterProfile = await userModel.findUserById(request.req_user_id);
         if (!requesterProfile) {
-            console.error(`Matching Error: Requester profile not found for user ID ${request.requester_user_id} (Request ID: ${requestId}).`);
+            console.error(`Matching Error: Requester profile not found for user ID ${request.req_user_id} (Request ID: ${requestId}).`);
             await requestModel.updateRequestMatchDetails(requestId, 'matching_failed', null, "Requester profile not found.");
             return;
         }
 
         // 3. Fetch Potential Helpers
-        const potentialHelpers = await userModel.findPotentialHelpers(request.requester_user_id);
+        const potentialHelpers = await userModel.findPotentialHelpers(request.req_user_id);
         if (!potentialHelpers || potentialHelpers.length === 0) {
             console.log(`No potential helpers found for request ID: ${requestId}.`);
             status = 'no_helpers_found';

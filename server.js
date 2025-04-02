@@ -18,7 +18,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/request', requestRoutes); 
+app.use('/api/request', authenticateToken, requestRoutes); 
 
 // Example of protected route
 app.get('/api/protected', authenticateToken, (req, res) => {

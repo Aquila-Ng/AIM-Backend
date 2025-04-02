@@ -21,17 +21,17 @@ async function createRequest(userId, taskType, comments){
 async function findRequestById(requestId){
     const query = `
     SELECT 
-        id, requester_user_id, task_type, comments, status, 
-        matched_helper_user_id, llm_generated_profile, created_at, updated_at
+        id, req_user_id, task_type, comments, status, 
+        matched_helper_id, llm_generated_profile, created_at, updated_at
     FROM help_requests
     WHERE id = $1;`;
     const values = [requestId];
     try {
-        const results = pool.query(query, values);
+        const results = await pool.query(query, values);
         return results.rows[0];
     }
     catch (err) {
-        console.error('Error finding Request ID: \n', err);
+        console.error(`Error finding Request ID (${requestId}): \n`, err);
         throw err
     }
 }
@@ -41,11 +41,11 @@ async function updateRequestMatchDetails(requestId, status, matchedHelperId = nu
         UPDATE help_requests
         SET
             status = $1,
-            matched_helper_user_id = $2,
+            matched_helper_id = $2,
             llm_generated_profile = $3,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = $4
-        RETURNING id, status, matched_helper_user_id; -- Return updated info`;
+        RETURNING id, status, matched_helper_id; -- Return updated info`;
     const values = [status, matchedHelperId, llmProfile, requestId];
     try {
         const result = await pool.query(query, values);
