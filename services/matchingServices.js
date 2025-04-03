@@ -34,8 +34,6 @@ const NEED_FIELDS = [
  */
 function calculateCompatibilityScore(requesterProfile, helperProfile, geoDistanceKm = null) {
     let score = 0;
-    console.log(requesterProfile);
-    console.log(helperProfile);
 
     // --- Optional: Check for disqualifying factors in helper ---
     // Example: If a helper has difficulty with errands, they might be disqualified

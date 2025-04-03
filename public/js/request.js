@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Basic validation (optional but recommended)
         if (!taskType) {
-            messageDiv.textContent = 'Please select a task type.';
-            messageDiv.style.color = 'red';
+            errorMessage.textContent = 'Please select a task type.';
+            errorMessage.style.display = 'block';
             return;
         }
 
@@ -41,19 +41,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok) {
-                messageDiv.textContent = `Request submitted successfully (ID: ${result.requestId})! Matching is in progress.`;
-                messageDiv.style.color = 'green';
-                requestForm.reset(); // Clear the form
+                errorMessage.innerHTML = `Request submitted successfully (ID: ${result.requestId})! View matching status <a href='/matches'>here</a>.`;
+                errorMessage.className = 'alert alert-success';
+                errorMessage.style.display = 'block';
+                // requestForm.reset(); // Clear the form
                 // Optionally redirect after a delay or provide a link
                 // setTimeout(() => window.location.href = '/home', 2000);
             } else {
-                messageDiv.textContent = `Error: ${result.error || 'Failed to submit request.'}`;
-                messageDiv.style.color = 'red';
+                errorMessage.textContent = `Error: ${result.error || 'Failed to submit request.'}`;
+                errorMessage.style.display = 'block';
             }
         } catch (error) {
             console.error('Error submitting request:', error);
-            messageDiv.textContent = 'An unexpected error occurred. Please try again.';
-            messageDiv.style.color = 'red';
+            errorMessage.textContent = 'An unexpected error occurred. Please try again.';
+            errorMessage.style.display = 'block';
         }
     });
 });

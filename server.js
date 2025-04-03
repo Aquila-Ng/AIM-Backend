@@ -31,6 +31,7 @@ app.get('/login', (req, res) => {res.sendFile(path.join(__dirname, './public', '
 app.get('/register', (req, res) => {res.sendFile(path.join(__dirname, './public', 'register.html'));});
 app.get('/home', (req, res) => {res.sendFile(path.join(__dirname, './public', 'home.html'))});
 app.get('/request', (req, res) => {res.sendFile(path.join(__dirname, './public', 'request.html'))})
+app.get('/matches', (req, res) => {res.sendFile(path.join(__dirname, './public', 'matches.html'))});
 
 // Start server only if DB Connection is successful
 connectDB().then(() => {
