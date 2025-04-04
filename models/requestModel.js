@@ -56,11 +56,11 @@ async function createPotentialMatches(requestId, matches){
 
     const query = `
         INSERT INTO 
-            potential_matches (request_id, potential_heler_id, score, status)
+            potential_matches (request_id, potential_helper_id, score, status)
         VALUES
             ${matches.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3}, 'pending')`).join(', ')}
         ON CONFLICT 
-            (request_id, potential_helper_id) DO NOTHHING -- Avoid errors if somehow offered twice.
+            (request_id, potential_helper_id) DO NOTHING -- Avoid errors if somehow offered twice.
         RETURNING id, request_id, potential_helper_id;
     `;
 
@@ -68,7 +68,7 @@ async function createPotentialMatches(requestId, matches){
 
     try{
         const results = await pool.query(query, values);
-        console.log(`Inserted ${results.rowCount} potential mactches for request ID ${requestId}`);
+        console.log(`Inserted ${results.rowCount} potential matches for request ID ${requestId}`);
         return results.rows;
     }
     catch (err){

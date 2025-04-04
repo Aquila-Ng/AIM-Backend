@@ -3,12 +3,13 @@ const matchingService = require('../services/matchingServices');
 
 async function createRequest(req, res){
     try {
-        if (!req.user || !req.userId){
+        if (!req.user || !req.user.userId){
             return res.status(401).json({error: 'User not authenticated'});
         }
         const userId = req.user.userId;
         const {taskType, comments, scheduledDateTime, latitude, longitude, address} = req.body;
 
+        console.log(taskType, comments, scheduledDateTime, latitude, longitude, address);
         if (!taskType){
             return res.status(400).json({error: 'taskType is required'});
         } 
@@ -16,7 +17,7 @@ async function createRequest(req, res){
         const scheduleDetails = {
             scheduledDateTime: scheduledDateTime || null,
             latitude: latitude || null,
-            longtitude: longitude || null,
+            longitude: longitude || null,
             address: address || null
         };
 

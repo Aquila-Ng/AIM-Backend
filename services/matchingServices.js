@@ -14,62 +14,171 @@ if (!GEMINI_API_KEY) {
 }
 
 // --- Configuration for Matching Logic ---
-const AGE_PRIORITY_BONUS = 3; // Score bonus for helpers aged 18-35
-const NEED_MATCH_SCORE = 2;   // Score for matching a need
-const SEX_MATCH_SCORE = 1;    // Score for matching sex
+const MAX_MATCHES_TO_OFFER = 10;
+
+const AGE_PRIORITY_BONUS = 3;     // Bonus for helpers aged 18-35
+const NEED_MATCH_SCORE = 2;       // Score for helper capability matching requester need
+const SEX_MATCH_SCORE = 1;        // Score for matching requester's sex preference (if any)
+const BMI_HEALTHY_BONUS = 2;      // Bonus for helper having BMI in healthy range
+const LLM_SEX_MATCH_SCORE = 2;    // Bonus if helper sex matches LLM ideal sex
+const LLM_CAPABILITY_MATCH_SCORE = 1; // Bonus per capability match with LLM profile (e.g., LLM wants no walking diff, helper has none)
+
+// Define which user profile fields represent needs
 const NEED_FIELDS = [
     'blind_vision_difficulty',
     'deaf_hearing_difficulty',
     'difficulty_walking',
-    // Add other fields representing a need (e.g., 'difficulty_dressing_bathing')
 ];
 
+const BMI_HEALTHY_MIN = 18.5;
+const BMI_HEALTHY_MAX = 24.9;
+
+function calculateBmi(heightCm, weightKg) {
+    if (!heightCm || heightCm <= 0 || !weightKg || weightKg <= 0) {
+        return null; // Invalid input
+    }
+    try {
+        const heightM = heightCm / 100; // Convert cm to meters
+        const bmi = weightKg / (heightM * heightM);
+        return bmi;
+    } catch (error) {
+        console.error("Error calculating BMI:", error);
+        return null;
+    }
+}
+
+function parseLlmProfile(llmProfileString) {
+    if (!llmProfileString || typeof llmProfileString !== 'string') {
+        return null;
+    }
+    console.log("Parsing LLM Profile String:", llmProfileString); // Debugging
+
+    const profile = {
+        sex: null,
+        visionDifficulty: null,
+        hearingDifficulty: null,
+        walkingDifficulty: null,
+    };
+
+    try {
+        // Regex to capture Key: [Value] format, handling potential whitespace variations
+        const sexMatch = llmProfileString.match(/•\s*Sex:\s*(Male|Female|Any)/i);
+        const visionMatch = llmProfileString.match(/•\s*Vision Difficulty:\s*(True|False)/i);
+        const hearingMatch = llmProfileString.match(/•\s*Hearing Difficulty:\s*(True|False)/i);
+        const walkingMatch = llmProfileString.match(/•\s*Walking Difficulty:\s*(True|False)/i);
+
+        if (sexMatch && sexMatch[1]) {
+             // Capitalize first letter, lowercase rest (e.g., "Female")
+            profile.sex = sexMatch[1].charAt(0).toUpperCase() + sexMatch[1].slice(1).toLowerCase();
+        }
+        if (visionMatch && visionMatch[1]) {
+            profile.visionDifficulty = visionMatch[1].toLowerCase() === 'true';
+        }
+        if (hearingMatch && hearingMatch[1]) {
+            profile.hearingDifficulty = hearingMatch[1].toLowerCase() === 'true';
+        }
+        if (walkingMatch && walkingMatch[1]) {
+            profile.walkingDifficulty = walkingMatch[1].toLowerCase() === 'true';
+        }
+
+        console.log("Parsed LLM Profile:", profile); // Debugging
+        return profile;
+
+    } catch (error) {
+        console.error("Error parsing LLM profile string:", error);
+        return null; // Return null if parsing fails
+    }
+}
+
 /**
- * Calculates compatibility score between requester and helper profiles.
- * Uses native boolean and integer types directly from database objects.
+ * Calculates compatibility score, considering base profile, LLM profile, and BMI.
  * @param {object} requesterProfile - User object for the requester.
  * @param {object} helperProfile - User object for the potential helper.
+ * @param {object | null} idealHelperProfile - Parsed LLM profile object (or null).
  * @param {number | null} geoDistanceKm - Geographic distance (optional).
  * @returns {number} - Compatibility score. Returns -Infinity if helper is disqualified.
  */
-function calculateCompatibilityScore(requesterProfile, helperProfile, geoDistanceKm = null) {
+function calculateCompatibilityScore(requesterProfile, helperProfile, idealHelperProfile, geoDistanceKm = null) {
     let score = 0;
 
-    // --- Optional: Check for disqualifying factors in helper ---
-    // Example: If a helper has difficulty with errands, they might be disqualified
-    // if (DISQUALIFYING_HELPER_FIELDS.some(field => helperProfile[field] === true)) {
-    //     console.log(`Helper ${helperProfile.id} disqualified due to field checks.`);
-    //     return -Infinity; // Use -Infinity to ensure they are ranked last
-    // }
-
-    // --- Need Matching (Requester Need = true, Helper Capability = false) ---
+    // --- 1. Base Score Calculation (Requester Needs vs. Helper Capabilities) ---
     NEED_FIELDS.forEach(field => {
-        if (requesterProfile[field] === true && helperProfile[field] === false) {
-            score += NEED_MATCH_SCORE;
+        // Check if field exists on both profiles before accessing
+        if (requesterProfile.hasOwnProperty(field) && helperProfile.hasOwnProperty(field)) {
+             if (requesterProfile[field] === true && helperProfile[field] === false) {
+                 score += NEED_MATCH_SCORE;
+             }
+        } else {
+             console.warn(`Scoring warning: Field '${field}' missing in requester or helper profile.`);
         }
-        // Optional: Penalize if helper has the *same* difficulty?
-        // else if (requesterProfile[field] === true && helperProfile[field] === true) {
-        //     score -= 1; // Adjust penalty as needed
-        // }
     });
 
-    // --- Sex Matching ---
-    if (requesterProfile.sex && helperProfile.sex && requesterProfile.sex === helperProfile.sex) {
-        score += SEX_MATCH_SCORE;
+    // --- 2. Base Sex Matching (Original Requester Preference - if applicable) ---
+    // Assuming direct sex match is the default preference if LLM profile is absent
+    if (!idealHelperProfile && requesterProfile.sex && helperProfile.sex && requesterProfile.sex === helperProfile.sex) {
+         score += SEX_MATCH_SCORE;
     }
 
-    // --- Age Priority Scoring ---
+    // --- 3. Age Priority Scoring ---
     if (helperProfile.age && helperProfile.age >= 18 && helperProfile.age <= 35) {
         score += AGE_PRIORITY_BONUS;
     }
-    // Optional: Add smaller bonus/penalty for other age ranges if desired
 
-    // --- Geo-Proximity Bonus (Conceptual) ---
+    // --- 4. BMI Scoring ---
+    const bmi = calculateBmi(helperProfile.height, helperProfile.weight); // Assumes height in cm, weight in kg
+    if (bmi !== null) {
+        console.log(`Helper ${helperProfile.id} BMI: ${bmi.toFixed(1)}`); // Debugging
+        if (bmi >= BMI_HEALTHY_MIN && bmi <= BMI_HEALTHY_MAX) {
+            score += BMI_HEALTHY_BONUS;
+            console.log(`Helper ${helperProfile.id} received BMI bonus.`); // Debugging
+        }
+    } else {
+         console.log(`Could not calculate BMI for helper ${helperProfile.id}.`);
+    }
+
+
+    // --- 5. LLM Profile Scoring (If available) ---
+    if (idealHelperProfile) {
+        console.log(`Applying LLM scoring for helper ${helperProfile.id}`);
+
+        // LLM Sex Preference Match
+        if (idealHelperProfile.sex && helperProfile.sex && idealHelperProfile.sex === helperProfile.sex) {
+            score += LLM_SEX_MATCH_SCORE;
+            console.log(` - LLM Sex Match Bonus Added`);
+        }
+
+        // LLM Capability Match (Helper should NOT have the difficulty if LLM says False)
+        const checkLlmCapability = (llmField, helperField) => {
+            if (idealHelperProfile[llmField] === false && helperProfile.hasOwnProperty(helperField) && helperProfile[helperField] === false) {
+                 score += LLM_CAPABILITY_MATCH_SCORE;
+                 console.log(` - LLM Capability Match Bonus Added for: ${llmField}`);
+            } else if (idealHelperProfile[llmField] === true && helperProfile.hasOwnProperty(helperField) && helperProfile[helperField] === true) {
+                // Optional: Add score if LLM wants difficulty and helper *has* it (e.g., shared experience?)
+                // score += LLM_SHARED_DIFFICULTY_SCORE;
+                // console.log(` - LLM Shared Difficulty Match Bonus Added for: ${llmField}`);
+            } else if (idealHelperProfile[llmField] === false && helperProfile.hasOwnProperty(helperField) && helperProfile[helperField] === true) {
+                // Optional: Penalize if LLM wants no difficulty but helper HAS it
+                // score -= LLM_CAPABILITY_MISMATCH_PENALTY;
+                 console.log(` - LLM Capability Mismatch (Penalty potential) for: ${llmField}`);
+            }
+        };
+
+        checkLlmCapability('visionDifficulty', 'blind_vision_difficulty');
+        checkLlmCapability('hearingDifficulty', 'deaf_hearing_difficulty');
+        checkLlmCapability('walkingDifficulty', 'difficulty_walking');
+
+    } else {
+        // console.log(`No idealHelperProfile provided for scoring helper ${helperProfile.id}`);
+    }
+
+
+    // --- 6. Geo-Proximity Bonus (Conceptual) ---
     if (geoDistanceKm !== null) {
         if (geoDistanceKm <= 5) score += 1;
         else if (geoDistanceKm <= 10) score += 0.5;
     }
 
+    console.log(`Final Score for Helper ${helperProfile.id}: ${score}`); // Debugging
     return score;
 }
 
@@ -107,11 +216,11 @@ async function generateIdealHelperProfile(requesterProfile, taskType, comments) 
         - Requester Comments: ${comments}  
 
         **Respond with the Ideal Helper Characteristics Profile in the following format:**  
-        •	Age: [Male/Female]
-        •	Sex: [Male/Female]
-        •	Vision Difficulty: [True/False]
-        •	Hearing Difficulty: [True/False]
-        •	Walking Difficulty: [True/False]
+        •	Age: Male or Female or null (select one based on the analysis)
+        •	Sex: Male or Female or null (select one based on the analysis)
+        •	Vision Difficulty: True or False (select one based on the analysis)
+        •	Hearing Difficulty: True or False (select one based on the analysis)
+        •	Walking Difficulty: True or False (select one based on the analysis)
         `;
 
     try {
@@ -138,10 +247,10 @@ async function generateIdealHelperProfile(requesterProfile, taskType, comments) 
     }
 }
 
-const MAX_MATCHES_TO_OFFER = 10; // Define how many top matches to offer
-async function findAndOfferMatches(requestId){
+async function findAndOfferMatches(requestId) {
     console.log(`Starting matching & offering process for request ID: ${requestId}`);
-    let llmProfile = null;
+    let llmProfileString = null; // Store the raw LLM output string
+    let parsedLlmProfile = null; // Store the parsed object
 
     try {
         const request = await requestModel.findRequestById(requestId);
@@ -151,33 +260,53 @@ async function findAndOfferMatches(requestId){
         }
 
         const requesterProfile = await userModel.findUserById(request.req_user_id);
-        if (!requesterProfile){
+        if (!requesterProfile) {
             console.error(`Matching Error: Requester profile not found for user ID ${request.req_user_id} (Request ID: ${requestId})`);
-            await requestModel.updateRequestMatchDetails(requestId, 'Matching_failed');
+            await requestModel.updateRequestStatus(requestId, 'matching_failed'); // Updated status name
             return;
         }
 
         const potentialHelpers = await userModel.findPotentialHelpers(request.req_user_id);
-        if (!potentialHelpers || potentialHelpers.length === 0){
-            console.log(`No potential helpers found for request ID: ${requestId}`);
-            await requestModel.updateRequestMatchDetails(requestId, 'no_helpers_found');
+        if (!potentialHelpers || potentialHelpers.length === 0) {
+            console.log(`No potential helpers found for request ID: ${requestId}.`);
+            await requestModel.updateRequestStatus(requestId, 'no_helpers_found');
+            return; // Exit cleanly
         }
         console.log(`Found ${potentialHelpers.length} potential helpers for request ${requestId}.`);
 
-        if (request.comments && request.comments.trim()){
-            // We don't store LLM profile on request anymore initially
-            // llmProfile = await generateIdealHelperProfile(requesterProfile, request.task_type, request.comments);
-            // TODO: Decide where/if to store the LLM profile now. Maybe on potential_matches? Or only generate when helper views?
-            console.log("LLM profile generation skipped for now in offer phase.");
+        // --- Generate and Parse LLM Profile (if comments exist) ---
+        if (request.comments && request.comments.trim()) {
+            llmProfileString = await generateIdealHelperProfile(requesterProfile, request.task_type, request.comments);
+            // Check if LLM returned an error message
+            if (llmProfileString && (llmProfileString.startsWith("Error") || llmProfileString.startsWith("LLM blocked") || llmProfileString.startsWith("LLM response format invalid"))) {
+                 console.warn(`LLM profile generation for request ${requestId} resulted in an error/invalid format: ${llmProfileString}`);
+                 // Decide how to proceed: continue without LLM scoring or fail? Let's continue without.
+                 parsedLlmProfile = null;
+                 // Optionally store the error message somewhere (e.g., request comments or a dedicated log field)
+            } else if (llmProfileString) {
+                 parsedLlmProfile = parseLlmProfile(llmProfileString);
+                 if (!parsedLlmProfile) {
+                      console.warn(`Failed to parse LLM profile string for request ${requestId}. Proceeding without LLM scoring.`);
+                      // LLM string might be stored, but scoring won't use it if parsing fails
+                 }
+            }
+        } else {
+            console.log(`No comments for request ${requestId}, skipping LLM profile generation.`);
         }
 
-        // Perform Rank & Retrieval Scoring
+        // --- Perform Rank & Retrieval Scoring ---
         console.log(`Scoring potential helpers for request ${requestId}...`);
         const scoredHelpers = potentialHelpers
-            .map(helper => ({
-                ...helper,
-                score: calculateCompatibilityScore(requesterProfile, helper, null) // Geo null for now
-            }))
+            .map(helper => {
+                // Pass the PARSED LLM profile (or null) to the scoring function
+                const score = calculateCompatibilityScore(
+                    requesterProfile,
+                    helper,
+                    parsedLlmProfile, // Pass parsed object
+                    null // geoDistanceKm
+                );
+                return { ...helper, score: score };
+            })
             .filter(helper => helper.score > -Infinity) // Remove disqualified
             .sort((a, b) => b.score - a.score); // Sort descending
 
@@ -187,28 +316,33 @@ async function findAndOfferMatches(requestId){
             return;
         }
 
+        // --- Select Top N Matches and Offer ---
         const topMatches = scoredHelpers.slice(0, MAX_MATCHES_TO_OFFER);
         console.log(`Top ${topMatches.length} matches selected for request ${requestId}: IDs ${topMatches.map(m => m.id).join(", ")}`);
+        // Log scores for debugging
+         topMatches.forEach(m => console.log(`  - Helper ${m.id}: Score ${m.score?.toFixed(2)}`));
 
+
+        // Store potential matches (includes score)
         const createdOffers = await requestModel.createPotentialMatches(requestId, topMatches);
-        if (createdOffers.length > 0){
+
+        if (createdOffers.length > 0) {
             await requestModel.updateRequestStatus(requestId, 'awaiting_acceptance');
-            console.log(`Request ${requestId} status updated to 'awaiting_acceptance'. Offer sent.`);
-        }
-        else {
-            console.warn(`No new potential matches were created for request ${rqeuestId}, possible duplicates.`);
+            console.log(`Request ${requestId} status updated to 'awaiting_acceptance'. Offers sent.`);
+            // TODO: Decide if/where to store llmProfileString - maybe add a column to potential_matches if needed for display later?
+            // Example: Add llmProfileString to the createPotentialMatches call and model if needed.
+        } else {
+            console.warn(`No new potential matches were created for request ${requestId}, possibly duplicates or error.`);
             await requestModel.updateRequestStatus(requestId, 'matching_failed');
         }
-    }
-    catch (err) {
-        console.error(`Unhandled error during matching/offering process for request ID: ${requestId}: `, err);
-        try{
+    } catch (err) {
+        console.error(`Unhandled error during matching/offering process for request ID ${requestId}: `, err);
+        try {
             await requestModel.updateRequestStatus(requestId, 'matching_failed');
-        }
-        catch (updateError){
+        } catch (updateError) {
             console.error(`Failed to update request ${requestId} status after matching error: `, updateError);
         }
-    }    
+    }
 }
 
 /**

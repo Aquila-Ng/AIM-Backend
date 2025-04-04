@@ -9,6 +9,7 @@ const userRoutes = require('./routes/userRoutes.js');
 const authRoutes = require('./routes/authRoutes.js');
 const requestRoutes = require('./routes/requestRoutes.js');
 const matchRoutes = require('./routes/matchRoutes.js');
+const mapRoutes = require('./routes/mapsRoute.js');
 
 const { authenticateToken, protectPage } = require('./middleware/authMiddleWare.js');
 
@@ -29,7 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/requests', authenticateToken, requestRoutes); 
 app.use('/api/matches', authenticateToken, matchRoutes);
-
+app.use('/api/maps', authenticateToken, mapRoutes);
 
 // Protected API route
 app.get('/api/protected', authenticateToken, (req, res) => {res.json({ message: "User authenticated", user: req.user });});
@@ -41,7 +42,7 @@ app.get('/register', (req, res) => {res.sendFile(path.join(__dirname, './public'
 
 // Protected pages
 app.get('/home', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'home.html'))});
-app.get('/request', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'request.html'))})
+app.get('/request', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'CreateRequest.html'))})
 app.get('/matches', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'matches.html'))});
 app.get('/requestHistory', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'requestHistory.html'))})
 
