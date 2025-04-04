@@ -1,35 +1,14 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if user is authenticated
+document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('jwToken');
-    
+
     if (!token) {
-        window.location.href = '/';
+        window.location.href = '/login';
         return;
     }
+});
 
-    fetch('/api/protected', {
-        headers: {
-            'authorisation': `Bearer ${token}`
-        }
-    })
-    .then(res => {
-        if (!res.ok){
-            throw new Error('Unauthorized');
-        }
-        return res.json();
-    })
-    .then(data => {
-        const message = data.message
-        
-    })
-    .catch(err => {
-        console.error('Error:', err);
-        window.location.href = '/'
-    })
-})
-
+// Logout functionality
 document.getElementById('logoutButton').addEventListener('click', () => {
     localStorage.removeItem('jwToken');
-
     window.location.href = '/';
 });

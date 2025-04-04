@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Help Request</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Add custom styles if needed */
+        #map {
+            height: 300px; /* Adjust map height */
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Create Help Request</h2>
+        <div id="message" class="mt-3"></div> <!-- For displaying feedback -->
+
+        <form id="requestForm">
+            <div class="form-group">
+                <label for="taskType">Task Type *</label>
+                <select class="form-control" id="taskType" required>
+                    <option value="" disabled selected>Select a task...</option>
+                    <option value="Groceries">Groceries</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Companionship">Companionship</option>
+                    <option value="Tech Support">Tech Support</option>
+                    <option value="Household Chores">Household Chores</option>
+                     <option value="Medical Appointment">Medical Appointment</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="comments">Comments / Details</label>
+                <textarea class="form-control" id="comments" rows="3" placeholder="Any specific instructions or details..."></textarea>
+            </div>
+
+             <hr>
+             <h5>Optional: Schedule and Location</h5>
+
+             <div class="form-group">
+                 <label for="scheduledDateTime">Schedule for Later (Date and Time)</label>
+                 <input type="datetime-local" class="form-control" id="scheduledDateTime">
+             </div>
+
+             <div class="form-group">
+                 <label for="addressInput">Location Address (where help is needed)</label>
+                 <input type="text" class="form-control" id="addressInput" placeholder="Start typing address...">
+                 <!-- Hidden fields to store lat/lng -->
+                 <input type="hidden" id="latitude">
+                 <input type="hidden" id="longitude">
+                 <input type="hidden" id="formattedAddress">
+             </div>
+
+             <!-- Map container -->
+             <div id="map"></div>
+
+
+            <button type="submit" class="btn btn-primary">Submit Request</button>
+            <a href="/home" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Google Maps API - Replace YOUR_API_KEY -->
+    <!-- IMPORTANT: Enable "Maps JavaScript API" and "Places API" in your Google Cloud Console -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap">
+    </script>
+    <script src="/js/createRequest.js"></script>
+
+</body>
+</html>

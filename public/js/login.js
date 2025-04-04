@@ -27,7 +27,7 @@ form.addEventListener('submit', function (event) {
     }
 
     if (!isValid) return;
-
+    
     // Send login request
     fetch('/api/auth/login', {
         method: 'POST',
@@ -49,8 +49,8 @@ form.addEventListener('submit', function (event) {
     })
     .then(data => {
         const token = data.token;
+        
         localStorage.setItem('jwToken', token);
-
         window.location.href = '/home';
     })
     .catch(err => {

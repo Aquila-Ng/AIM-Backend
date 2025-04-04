@@ -138,98 +138,171 @@ async function generateIdealHelperProfile(requesterProfile, taskType, comments) 
     }
 }
 
+const MAX_MATCHES_TO_OFFER = 10; // Define how many top matches to offer
+async function findAndOfferMatches(requestId){
+    console.log(`Starting matching & offering process for request ID: ${requestId}`);
+    let llmProfile = null;
+
+    try {
+        const request = await requestModel.findRequestById(requestId);
+        if (!request || request.status !== 'open') {
+            console.log(`Request ID ${requestId} not found or not open. Skipping matching.`);
+            return;
+        }
+
+        const requesterProfile = await userModel.findUserById(request.req_user_id);
+        if (!requesterProfile){
+            console.error(`Matching Error: Requester profile not found for user ID ${request.req_user_id} (Request ID: ${requestId})`);
+            await requestModel.updateRequestMatchDetails(requestId, 'Matching_failed');
+            return;
+        }
+
+        const potentialHelpers = await userModel.findPotentialHelpers(request.req_user_id);
+        if (!potentialHelpers || potentialHelpers.length === 0){
+            console.log(`No potential helpers found for request ID: ${requestId}`);
+            await requestModel.updateRequestMatchDetails(requestId, 'no_helpers_found');
+        }
+        console.log(`Found ${potentialHelpers.length} potential helpers for request ${requestId}.`);
+
+        if (request.comments && request.comments.trim()){
+            // We don't store LLM profile on request anymore initially
+            // llmProfile = await generateIdealHelperProfile(requesterProfile, request.task_type, request.comments);
+            // TODO: Decide where/if to store the LLM profile now. Maybe on potential_matches? Or only generate when helper views?
+            console.log("LLM profile generation skipped for now in offer phase.");
+        }
+
+        // Perform Rank & Retrieval Scoring
+        console.log(`Scoring potential helpers for request ${requestId}...`);
+        const scoredHelpers = potentialHelpers
+            .map(helper => ({
+                ...helper,
+                score: calculateCompatibilityScore(requesterProfile, helper, null) // Geo null for now
+            }))
+            .filter(helper => helper.score > -Infinity) // Remove disqualified
+            .sort((a, b) => b.score - a.score); // Sort descending
+
+        if (scoredHelpers.length === 0) {
+            console.log(`No suitable helpers found after scoring for request ${requestId}.`);
+            await requestModel.updateRequestStatus(requestId, 'no_matches_found');
+            return;
+        }
+
+        const topMatches = scoredHelpers.slice(0, MAX_MATCHES_TO_OFFER);
+        console.log(`Top ${topMatches.length} matches selected for request ${requestId}: IDs ${topMatches.map(m => m.id).join(", ")}`);
+
+        const createdOffers = await requestModel.createPotentialMatches(requestId, topMatches);
+        if (createdOffers.length > 0){
+            await requestModel.updateRequestStatus(requestId, 'awaiting_acceptance');
+            console.log(`Request ${requestId} status updated to 'awaiting_acceptance'. Offer sent.`);
+        }
+        else {
+            console.warn(`No new potential matches were created for request ${rqeuestId}, possible duplicates.`);
+            await requestModel.updateRequestStatus(requestId, 'matching_failed');
+        }
+    }
+    catch (err) {
+        console.error(`Unhandled error during matching/offering process for request ID: ${requestId}: `, err);
+        try{
+            await requestModel.updateRequestStatus(requestId, 'matching_failed');
+        }
+        catch (updateError){
+            console.error(`Failed to update request ${requestId} status after matching error: `, updateError);
+        }
+    }    
+}
+
 /**
  * Orchestrates the matching process for a given help request.
  * Fetches data, runs R&R scoring, optionally calls LLM, and updates the request status.
  * This function runs asynchronously and doesn't block the initial request creation.
  * @param {number} requestId - The ID of the help_requests row.
  */
-async function findAndAssignMatch(requestId) {
-    console.log(`Starting matching process for request ID: ${requestId}`);
-    let status = 'matching_failed'; // Default status if errors occur early
-    let llmProfile = null;
-    let topMatchId = null;
+// async function findAndAssignMatch(requestId) {
+//     console.log(`Starting matching process for request ID: ${requestId}`);
+//     let status = 'matching_failed'; // Default status if errors occur early
+//     let llmProfile = null;
+//     let topMatchId = null;
 
-    try {
-        // 1. Fetch Request Details
-        const request = await requestModel.findRequestById(requestId);
-        if (!request) {
-            console.error(`Matching Error: Request ID ${requestId} not found.\n`);
-            // No request to update, just log and exit
-            return;
-        }
-        if (request.status !== 'open') {
-             console.log(`Request ${requestId} is not in 'open' state (current: ${request.status}). Skipping matching.`);
-             return; // Avoid rematching
-        }
+//     try {
+//         // 1. Fetch Request Details
+//         const request = await requestModel.findRequestById(requestId);
+//         if (!request) {
+//             console.error(`Matching Error: Request ID ${requestId} not found.\n`);
+//             // No request to update, just log and exit
+//             return;
+//         }
+//         if (request.status !== 'open') {
+//              console.log(`Request ${requestId} is not in 'open' state (current: ${request.status}). Skipping matching.`);
+//              return; // Avoid rematching
+//         }
 
-        // 2. Fetch Requester Profile
-        const requesterProfile = await userModel.findUserById(request.req_user_id);
-        if (!requesterProfile) {
-            console.error(`Matching Error: Requester profile not found for user ID ${request.req_user_id} (Request ID: ${requestId}).`);
-            await requestModel.updateRequestMatchDetails(requestId, 'matching_failed', null, "Requester profile not found.");
-            return;
-        }
+//         // 2. Fetch Requester Profile
+//         const requesterProfile = await userModel.findUserById(request.req_user_id);
+//         if (!requesterProfile) {
+//             console.error(`Matching Error: Requester profile not found for user ID ${request.req_user_id} (Request ID: ${requestId}).`);
+//             await requestModel.updateRequestMatchDetails(requestId, 'matching_failed', null, "Requester profile not found.");
+//             return;
+//         }
 
-        // 3. Fetch Potential Helpers
-        const potentialHelpers = await userModel.findPotentialHelpers(request.req_user_id);
-        if (!potentialHelpers || potentialHelpers.length === 0) {
-            console.log(`No potential helpers found for request ID: ${requestId}.`);
-            status = 'no_helpers_found';
-            await requestModel.updateRequestMatchDetails(requestId, status);
-            return;
-        }
-        console.log(`Found ${potentialHelpers.length} potential helpers for request ${requestId}.`);
+//         // 3. Fetch Potential Helpers
+//         const potentialHelpers = await userModel.findPotentialHelpers(request.req_user_id);
+//         if (!potentialHelpers || potentialHelpers.length === 0) {
+//             console.log(`No potential helpers found for request ID: ${requestId}.`);
+//             status = 'no_helpers_found';
+//             await requestModel.updateRequestMatchDetails(requestId, status);
+//             return;
+//         }
+//         console.log(`Found ${potentialHelpers.length} potential helpers for request ${requestId}.`);
 
 
-        // 4. Generate LLM Profile (if comments exist)
-        if (request.comments && request.comments.trim()) {
-            llmProfile = await generateIdealHelperProfile(requesterProfile, request.task_type, request.comments);
-            // Store the LLM profile regardless of whether it's an error message or valid text
-        } else {
-             console.log(`No comments for request ${requestId}, skipping LLM profile generation.`);
-        }
+//         // 4. Generate LLM Profile (if comments exist)
+//         if (request.comments && request.comments.trim()) {
+//             llmProfile = await generateIdealHelperProfile(requesterProfile, request.task_type, request.comments);
+//             // Store the LLM profile regardless of whether it's an error message or valid text
+//         } else {
+//              console.log(`No comments for request ${requestId}, skipping LLM profile generation.`);
+//         }
 
-        // 5. Perform Rank & Retrieval Scoring
-        console.log(`Scoring potential helpers for request ${requestId}...`);
-        const scoredHelpers = potentialHelpers.map(helper => {
-            // Pass profiles and potentially geoDistance (if available/calculated)
-            const score = calculateCompatibilityScore(requesterProfile, helper, null); // Pass null for geoDistance for now
-            return { ...helper, score: score };
-        })
-        .filter(helper => helper.score > -Infinity); // Remove disqualified helpers
+//         // 5. Perform Rank & Retrieval Scoring
+//         console.log(`Scoring potential helpers for request ${requestId}...`);
+//         const scoredHelpers = potentialHelpers.map(helper => {
+//             // Pass profiles and potentially geoDistance (if available/calculated)
+//             const score = calculateCompatibilityScore(requesterProfile, helper, null); // Pass null for geoDistance for now
+//             return { ...helper, score: score };
+//         })
+//         .filter(helper => helper.score > -Infinity); // Remove disqualified helpers
 
-        if (scoredHelpers.length === 0) {
-            console.log(`No suitable helpers found after scoring for request ${requestId}.`);
-            status = 'no_matches_found';
-            await requestModel.updateRequestMatchDetails(requestId, status, null, llmProfile);
-            return;
-        }
+//         if (scoredHelpers.length === 0) {
+//             console.log(`No suitable helpers found after scoring for request ${requestId}.`);
+//             status = 'no_matches_found';
+//             await requestModel.updateRequestMatchDetails(requestId, status, null, llmProfile);
+//             return;
+//         }
 
-        // 6. Sort by Score (Descending)
-        scoredHelpers.sort((a, b) => b.score - a.score); // Highest score first
+//         // 6. Sort by Score (Descending)
+//         scoredHelpers.sort((a, b) => b.score - a.score); // Highest score first
 
-        // 7. Select Top Match
-        topMatchId = scoredHelpers[0].id;
-        status = 'matched'; // Or 'awaiting_confirmation' if needed
-        console.log(`Top match for request ${requestId}: Helper ID ${topMatchId} (Score: ${scoredHelpers[0].score})`);
+//         // 7. Select Top Match
+//         topMatchId = scoredHelpers[0].id;
+//         status = 'matched'; // Or 'awaiting_confirmation' if needed
+//         console.log(`Top match for request ${requestId}: Helper ID ${topMatchId} (Score: ${scoredHelpers[0].score})`);
 
-        // 8. Update Request in DB
-        await requestModel.updateRequestMatchDetails(requestId, status, topMatchId, llmProfile);
-        console.log(`Matching process completed successfully for request ${requestId}.`);
+//         // 8. Update Request in DB
+//         await requestModel.updateRequestMatchDetails(requestId, status, topMatchId, llmProfile);
+//         console.log(`Matching process completed successfully for request ${requestId}.`);
 
-    } catch (error) {
-        console.error(`Unhandled error during matching process for request ID ${requestId}:`, error);
-        // Attempt to update the status to failed, even if some steps succeeded before the error
-        try {
-            // Use the 'status' variable which might hold an intermediate failure state
-            await requestModel.updateRequestMatchDetails(requestId, status, topMatchId, llmProfile || `Matching Error: ${error.message}`);
-        } catch (updateError) {
-            console.error(`Failed to update request ${requestId} status after matching error:`, updateError);
-        }
-    }
-}
+//     } catch (error) {
+//         console.error(`Unhandled error during matching process for request ID ${requestId}:`, error);
+//         // Attempt to update the status to failed, even if some steps succeeded before the error
+//         try {
+//             // Use the 'status' variable which might hold an intermediate failure state
+//             await requestModel.updateRequestMatchDetails(requestId, status, topMatchId, llmProfile || `Matching Error: ${error.message}`);
+//         } catch (updateError) {
+//             console.error(`Failed to update request ${requestId} status after matching error:`, updateError);
+//         }
+//     }
+// }
 
 module.exports = {
-    findAndAssignMatch
+    findAndOfferMatches
 }
