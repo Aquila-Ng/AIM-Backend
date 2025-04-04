@@ -49,7 +49,7 @@ async function getMyRequestHistory(req, res) {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10; // Default limit
 
-        const historyData = await requestModel.findRequestsByRequester(userId, page, limit);
+        const historyData = await requestModels.findRequestsByRequester(userId, page, limit);
 
         res.status(200).json(historyData);
 

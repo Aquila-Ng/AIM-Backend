@@ -42,7 +42,7 @@ app.get('/register', (req, res) => {res.sendFile(path.join(__dirname, './public'
 
 // Protected pages
 app.get('/home', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'home.html'))});
-app.get('/request', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'CreateRequest.html'))})
+app.get('/createRequest', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'createRequest.html'))})
 app.get('/matches', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'matches.html'))});
 app.get('/requestHistory', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'requestHistory.html'))})
 
