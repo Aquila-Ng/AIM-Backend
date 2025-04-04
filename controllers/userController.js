@@ -1,60 +1,34 @@
-const userModel = require('../models/userModel');
+const userModel = require('../models/authModel');
 
-// Handle request logic for test query
-const test = async (req, res) => {
+async function getCurrentUser(req, res) {
+  // The authenticateToken middleware already verified the token
+  // and put the user payload in req.user ({ userId, email })
+  if (!req.user || !req.user.userId) {
+      // This shouldn't happen if authenticateToken is working, but good practice
+      return res.status(401).json({ error: 'Authentication details not found.' });
+  }
+
   try {
-    const result = await userModel.testQuery();
-    res.json(result);
+      // Fetch full (but non-sensitive) user details from DB using the ID from the token
+      const userProfile = await userModel.findUserById(req.user.userId);
+
+      if (!userProfile) {
+          return res.status(404).json({ error: 'User profile not found.' });
+      }
+
+      // Remove sensitive data before sending
+      delete userProfile.password;
+      delete userProfile.salt;
+
+      res.status(200).json(userProfile);
+
+  } catch (error) {
+      console.error("Error fetching current user profile:", error);
+      res.status(500).json({ error: 'Failed to retrieve user profile.' });
   }
-  catch (err) {
-    res.status(500).json({ error: 'Failed test' });
-  }
-  
 }
 
-// Handle request logic for getting all users
-const getAllUsers = async (req, res) => {
-  try {
-    const users = await userModel.getAllUsers();
-    res.json(users);
-  } 
-  catch (err) {
-    res.status(500).json({ error: 'Failed to fetch users' });
-  }
-};
-
-// Handle request logic for getting a user by ID
-const getUserById = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const user = await userModel.getUserById(id);
-    if (user) {
-      res.json(user);
-    } 
-    else {
-      res.status(404).json({ error: 'User not found' });
-    }
-  } 
-  catch (err) {
-    res.status(500).json({ error: 'Failed to fetch user' });
-  }
-};
-
-// Handle request logic for adding a new user
-const addUser = async (req, res) => {
-  const { name, email } = req.body;
-  try {
-    const userId = await userModel.addUser(name, email);
-    res.status(201).json({ id: userId, name, email });
-  } 
-  catch (err) {
-    res.status(500).json({ error: 'Failed to create user' });
-  }
-};
-
 module.exports = {
-  test,
-  getAllUsers,
-  getUserById,
-  addUser,
+  getCurrentUser,
+  // Add other user-related controller functions here
 };

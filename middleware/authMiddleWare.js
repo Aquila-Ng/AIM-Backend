@@ -5,6 +5,7 @@ const path = require('path');
 dotenv.config({path : path.join(__dirname, '../.env')});
 
 const jwtSecret = process.env.JWT_SECRET;
+const COOKIE_NAME = 'authToken';
 
 function authenticateToken(req, res, next) {
     let token = req.cookies?.[COOKIE_NAME];

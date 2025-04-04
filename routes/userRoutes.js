@@ -1,17 +1,11 @@
 const express = require('express');
 const userController = require('../controllers/userController');
+// Note: authenticateToken is applied in server.js for ALL /api/users routes
+
 const router = express.Router();
 
-// Route to test query
-router.get('/test', userController.test);
+router.get('/me', userController.getCurrentUser);
 
-// Route to get all users
-router.get('/users', userController.getAllUsers);
-
-// Route to get a user by ID
-router.get('/users/:id', userController.getUserById);
-
-// Route to create a new user
-router.post('/users', userController.addUser);
+// Add other user routes here (e.g., update profile, etc.)
 
 module.exports = router;

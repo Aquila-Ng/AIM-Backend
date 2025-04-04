@@ -41,16 +41,20 @@ form.addEventListener('submit', function (event) {
     })
     .then(res => {
         if (!res.ok) {
-            return res.json().then(err => {
-                throw new Error(err.error || 'Login failed'); // Use `error` key instead of `message`
-            });
+            if (res.status === 401 || res.status === 403 ) {
+                ShowMessage('Your session has expired. Please log in again.', 'warning');
+                setTimeout(() => window.location.href = '/login', 2000);
+                return;
+            }
+            else {
+                return res.json().then(err => {
+                    throw new Error(err.error || 'Login failed'); // Use `error` key instead of `message`
+                });
+            }
         }
         return res.json();
     })
     .then(data => {
-        const token = data.token;
-        
-        localStorage.setItem('jwToken', token);
         window.location.href = '/home';
     })
     .catch(err => {
