@@ -45,6 +45,7 @@ app.get('/home', protectPage, (req, res) => {res.sendFile(path.join(__dirname, '
 app.get('/createRequest', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'createRequest.html'))})
 app.get('/matches', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'matches.html'))});
 app.get('/requestHistory', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'requestHistory.html'))})
+app.get('/helperMatches', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'helperMatches.html'))});
 
 // Start server only if DB Connection is successful
 connectDB().then(() => {

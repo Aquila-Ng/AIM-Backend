@@ -88,7 +88,7 @@ async function loginUser(req, res) {
 async function logoutUser(req, res) {
     res.cookie(COOKIE_NAME, '', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === production,
+        secure: process.env.NODE_ENV === 'production',
         expires: new Date(0),
         path: '/',
     });

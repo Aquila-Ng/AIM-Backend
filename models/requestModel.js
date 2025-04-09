@@ -150,6 +150,7 @@ async function findPendingMatchesForHelper(helperId, page = 1, limit = 10) {
             pm.id AS match_id, pm.score, pm.offered_at,
             r.id AS request_id, r.task_type, r.comments, r.created_at AS request_created_at,
             r.scheduled_datetime, r.location_address,
+            r.location_latitude, r.location_longitude, 
             u.first_name AS requester_first_name,
             u.last_name AS requester_last_name,
             u.age AS requester_age -- Add other requester details you want to show (be mindful of privacy)
