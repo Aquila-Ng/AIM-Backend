@@ -1,4 +1,5 @@
 const requestModel = require('../models/requestModel'); // Contains match functions now
+const chatModel = require('../models/chatModel'); 
 const {pool} = require('../config/db');
 
 // Controller to get pending matches for the logged-in helper
@@ -73,7 +74,7 @@ async function acceptMatch(req, res) {
              // 7. Create the chat entry
              const request = await requestModel.findRequestById(match.request_id, client); // Pass the client
              if (request) {
-                //   await requestModel.createChat(match.request_id, request.req_user_id, helperId, client); // Pass the client
+                await chatModel.createChat(match.request_id, request.req_user_id, helperId); // Pass the client
              } else {
                   console.warn(`Could not find request ${match.request_id} to create chat.`);
              }

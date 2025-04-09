@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Chats - ConnectAI</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            padding-top: 56px; /* Adjust if your navbar height is different */
+            background-color: #f8f9fa; /* Light background */
+        }
+        .list-group-item-action {
+            transition: background-color 0.2s ease-in-out;
+        }
+        .chat-preview {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        /* Add subtle shadow to list items on hover for depth */
+        .list-group-item-action:hover {
+             box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+             z-index: 1; /* Bring item forward */
+        }
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <a class="navbar-brand" href="#">ConnectAI</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mr-auto">
+                <!-- <li class="nav-item">
+                    <a class="nav-link" href="#">Requests</a>
+                </li> -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Requests</a>
+                    <div class="dropdown-menu" aria-labelledby="userDropdown" style="right: auto; left: auto; width: 50px;">
+                        <a class="dropdown-item" href="/createRequest">Create New</a>
+                        <a class="dropdown-item" href="/requestHistory">History</a>
+                        <a class="dropdown-item" href="/helperMatches">Matches</a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Chats</a>
+                </li>
+            </ul>
+            <!-- <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false" id="userName">
+                        <i class="fas fa-user-circle"></i>John Doe
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="userName">
+                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="#" id="logoutButton">Logout</a></li>
+                    </ul>
+                </li>
+            </ul> -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-user-circle"></i> John Doe
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="userDropdown" style="width: 50px;">
+                        <a class="dropdown-item" href="/profile">Profile</a>
+                        <a class="dropdown-item" href="#" id="logoutButton">Logout</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <!-- /Navbar Placeholder -->
+
+    <main class="container mt-4">
+        <h2 class="mb-4">My Chats</h2>
+
+        <!-- Message Area for Loading/Errors -->
+        <div id="message" class="alert alert-dismissible fade show" role="alert" style="display: none;">
+             <span id="messageText"></span>
+             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="chatListLoading" class="text-center text-muted py-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading chats...</span>
+            </div>
+            <p class="mt-2">Loading chats...</p>
+        </div>
+
+        <!-- Chat List -->
+        <div class="list-group shadow-sm mb-4" id="chatList">
+            <!-- Chat items will be dynamically inserted here -->
+            <!-- Example Item Structure (for reference):
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Other User Name</h6>
+                    <small class="text-muted">3 days ago</small>
+                </div>
+                <p class="mb-1 chat-preview text-truncate">Last message preview goes here...</p>
+                <small class="text-muted">Task: Groceries</small>
+            </a>
+             -->
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Chat list navigation" id="paginationContainer" class="d-flex justify-content-center">
+            <ul class="pagination" id="chatListPagination">
+                <!-- Pagination items will be dynamically inserted here -->
+            </ul>
+        </nav>
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <!-- Your Custom JS -->
+    <script src="/js/chatList.js"></script>
+     <!-- Optional: Common script for navbar etc. -->
+     <!-- <script src="/js/common.js"></script> -->
+</body>
+</html>

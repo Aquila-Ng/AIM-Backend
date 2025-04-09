@@ -5,7 +5,6 @@ const userController = require('../controllers/userController');
 const router = express.Router();
 
 router.get('/me', userController.getCurrentUser);
-
-// Add other user routes here (e.g., update profile, etc.)
+router.put('/me', userController.updateCurrentUserProfile);
 
 module.exports = router;

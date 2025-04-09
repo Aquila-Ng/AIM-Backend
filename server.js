@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes.js');
 const requestRoutes = require('./routes/requestRoutes.js');
 const matchRoutes = require('./routes/matchRoutes.js');
 const mapRoutes = require('./routes/mapsRoute.js');
+const chatRoutes = require('./routes/chatRoutes.js');
 
 const { authenticateToken, protectPage } = require('./middleware/authMiddleWare.js');
 
@@ -31,6 +32,7 @@ app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/requests', authenticateToken, requestRoutes); 
 app.use('/api/matches', authenticateToken, matchRoutes);
 app.use('/api/maps', authenticateToken, mapRoutes);
+app.use('/api/chats', authenticateToken, chatRoutes);
 
 // Protected API route
 app.get('/api/protected', authenticateToken, (req, res) => {res.json({ message: "User authenticated", user: req.user });});
@@ -43,9 +45,12 @@ app.get('/register', (req, res) => {res.sendFile(path.join(__dirname, './public'
 // Protected pages
 app.get('/home', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'home.html'))});
 app.get('/createRequest', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'createRequest.html'))})
-app.get('/matches', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'matches.html'))});
 app.get('/requestHistory', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'requestHistory.html'))})
-app.get('/helperMatches', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'helperMatches.html'))});
+app.get('/helperMatches', protectPage, (req, res) => {res.sendFile(path.join(__dirname, './public', 'helperMatches.html'))})
+app.get('/profile', protectPage, (req,res) => {res.sendFile(path.join(__dirname, './public', 'profile.html'))})
+app.get('/chatList', protectPage, (req,res) => {res.sendFile(path.join(__dirname, './public', 'chatList.html'))})
+app.get('/chatView', protectPage, (req,res) => {res.sendFile(path.join(__dirname, './public', 'chatView.html'))})
+
 
 // Start server only if DB Connection is successful
 connectDB().then(() => {
