@@ -17,11 +17,11 @@ if (!GEMINI_API_KEY) {
 const MAX_MATCHES_TO_OFFER = 10;
 
 const AGE_PRIORITY_BONUS = 3;     // Bonus for helpers aged 18-35
-const NEED_MATCH_SCORE = 2;       // Score for helper capability matching requester need
-const SEX_MATCH_SCORE = 1;        // Score for matching requester's sex preference (if any)
+const NEED_MATCH_SCORE = 3;       // Score for helper capability matching requester need
+const SEX_MATCH_SCORE = 3;        // Score for matching requester's sex preference (if any)
 const BMI_HEALTHY_BONUS = 2;      // Bonus for helper having BMI in healthy range
-const LLM_SEX_MATCH_SCORE = 2;    // Bonus if helper sex matches LLM ideal sex
-const LLM_CAPABILITY_MATCH_SCORE = 1; // Bonus per capability match with LLM profile (e.g., LLM wants no walking diff, helper has none)
+const LLM_SEX_MATCH_SCORE = 3;    // Bonus if helper sex matches LLM ideal sex
+const LLM_CAPABILITY_MATCH_SCORE = 2; // Bonus per capability match with LLM profile (e.g., LLM wants no walking diff, helper has none)
 
 // Define which user profile fields represent needs
 const NEED_FIELDS = [
@@ -107,6 +107,7 @@ function calculateCompatibilityScore(requesterProfile, helperProfile, idealHelpe
         if (requesterProfile.hasOwnProperty(field) && helperProfile.hasOwnProperty(field)) {
              if (requesterProfile[field] === true && helperProfile[field] === false) {
                  score += NEED_MATCH_SCORE;
+
              }
         } else {
              console.warn(`Scoring warning: Field '${field}' missing in requester or helper profile.`);
@@ -138,13 +139,32 @@ function calculateCompatibilityScore(requesterProfile, helperProfile, idealHelpe
 
 
     // --- 5. LLM Profile Scoring (If available) ---
+   // --- 5. LLM Profile Scoring (If available) ---
     if (idealHelperProfile) {
         console.log(`Applying LLM scoring for helper ${helperProfile.id}`);
+        console.log(` - Parsed LLM Profile:`, idealHelperProfile); // Log the whole parsed object
+        console.log(` - Helper Profile Sex: [${helperProfile.sex}]`); // Log helper's sex
 
-        // LLM Sex Preference Match
-        if (idealHelperProfile.sex && helperProfile.sex && idealHelperProfile.sex === helperProfile.sex) {
-            score += LLM_SEX_MATCH_SCORE;
-            console.log(` - LLM Sex Match Bonus Added`);
+        // LLM Sex Preference Match (Refined)
+        // Check if BOTH the ideal profile and the helper profile have a non-empty sex value
+        if (idealHelperProfile.sex && typeof idealHelperProfile.sex === 'string' &&
+            helperProfile.sex && typeof helperProfile.sex === 'string') {
+
+            // Perform a case-insensitive comparison
+            const idealSexLower = idealHelperProfile.sex.toLowerCase();
+            const helperSexLower = helperProfile.sex.toLowerCase();
+
+            console.log(`   - Comparing Ideal Sex (lower): [${idealSexLower}] vs Helper Sex (lower): [${helperSexLower}]`); // Debug comparison
+
+            if (idealSexLower === helperSexLower) {
+                score += LLM_SEX_MATCH_SCORE;
+                console.log(`   - LLM Sex Match Bonus Added (+${LLM_SEX_MATCH_SCORE})`);
+            } else {
+                 console.log(`   - No LLM Sex Match (Values differ case-insensitively)`);
+            }
+        } else {
+            // Log why the comparison was skipped
+             console.log(`   - Skipping LLM Sex Match because ideal sex (${idealHelperProfile.sex}) or helper sex (${helperProfile.sex}) is missing or not a string.`);
         }
 
         // LLM Capability Match (Helper should NOT have the difficulty if LLM says False)

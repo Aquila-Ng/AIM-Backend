@@ -4,150 +4,224 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Help Request</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Azure Maps CSS -->
     <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" type="text/css">
 
     <style>
-        /* Navbar styling */
-        .navbar {
-            margin-bottom: 20px;
+        body {
+            padding-top: 70px; /* Adjusted for fixed navbar */
+            background-color: #e9ecef; /* Lighter gray background */
         }
-        
-        /* Style the map container */
-        #myMap { /* Changed ID */
-            height: 350px; /* Adjust map height */
+        .navbar {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
+        }
+        /* Card Styling */
+        .request-card {
+            background-color: #fff;
+            border-radius: 0.8rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            /* "Chiseled" effect using inset shadow and border */
+            border: 1px solid #dee2e6;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075), 0 4px 8px rgba(0,0,0,0.1);
+        }
+        /* Hide steps initially */
+        .form-step {
+            display: none;
+        }
+        .form-step.active {
+            display: block;
+            /* Add fade-in animation (optional) */
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Map container */
+        #myMap {
+            height: 300px; /* Slightly smaller map */
             width: 100%;
             margin-bottom: 1rem;
             border: 1px solid #ccc;
+            border-radius: 0.375rem; /* Match form control */
         }
-        /* Style for search suggestions */
+        /* Suggestions list */
         .suggestions-list {
-             border: 1px solid #ced4da;
-             border-top: none;
-             max-height: 200px;
-             overflow-y: auto;
-             position: absolute; /* Position below input */
-             background-color: white;
-             width: calc(100% - 2px); /* Match input width minus borders */
-             z-index: 1000; /* Appear above map */
-             list-style-type: none;
-             padding-left: 0;
-             margin-top: -1px; /* Overlap top border */
-         }
-         .suggestions-list li {
-             padding: 8px 12px;
-             cursor: pointer;
-         }
-         .suggestions-list li:hover {
-             background-color: #f8f9fa;
-         }
-         .form-group {
-             position: relative; /* Needed for absolute positioning of suggestions */
-         }
+            border: 1px solid #ced4da; border-top: none;
+            max-height: 180px; overflow-y: auto;
+            position: absolute; background-color: white;
+            width: 100%; /* Full width relative to parent */
+            z-index: 1050; /* Above map, below modal */
+            list-style-type: none; padding-left: 0;
+            margin-top: -1px; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;
+        }
+        .suggestions-list li { padding: 0.5rem 0.75rem; cursor: pointer; }
+        .suggestions-list li:hover { background-color: #f0f0f0; }
+        .form-control:focus, .form-select:focus {
+             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Standard Bootstrap focus */
+        }
     </style>
 </head>
 <body>
+    <!-- Navbar -->
+    <!-- <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/home">ConnectAI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle active" href="#" id="requestsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Requests</a>
+                        <ul class="dropdown-menu" aria-labelledby="requestsDropdown">
+                            <li><a class="dropdown-item active" aria-current="page" href="/createRequest">Create New</a></li>
+                            <li><a class="dropdown-item" href="/requestHistory">History</a></li>
+                            <li><a class="dropdown-item" href="/helperMatches">Matches</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"> <a class="nav-link" href="/chatList.html">Chats</a> </li>
+                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> <span id="navbarUsername">Loading...</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item" id="logoutButton">Logout</button></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav> -->
+    <!-- /Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <a class="navbar-brand" href="/home">ConnectAI</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mr-auto">
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">Requests</a>
-                </li> -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Requests</a>
-                    <div class="dropdown-menu" aria-labelledby="userDropdown" style="right: auto; left: auto; width: 50px;">
-                        <a class="dropdown-item" href="/createRequest">Create New</a>
-                        <a class="dropdown-item" href="/requestHistory">History</a>
-                        <a class="dropdown-item" href="/helperMatches">Matches</a>
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/chatList">Chats</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-user-circle"></i> John Doe
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="userDropdown" style="width: 50px;">
-                        <a class="dropdown-item" href="/profile">Profile</a>
-                        <a class="dropdown-item" href="#" id="logoutButton">Logout</a>
-                    </div>
-                </li>
-            </ul>
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/home">ConnectAI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="requestsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Requests</a>
+                        <ul class="dropdown-menu" aria-labelledby="requestsDropdown" style="right: auto; left: auto; width: auto;">
+                            <li><a class="dropdown-item" href="/createRequest">Create New</a></li>
+                            <li><a class="dropdown-item" href="/requestHistory">History</a></li>
+                            <li><a class="dropdown-item" href="/helperMatches">Matches</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/chatList">Chats</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i> 
+                            <span id="navbarUsername">John Doe</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="width: auto;">
+                            <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                            <li><a class="dropdown-item" href="#" id="logoutButton">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
-    
-    <div class="container mt-5">
-        <h2>Create Help Request</h2>
-        <div id="message" class="mt-3"></div>
 
-        <form id="requestForm">
-            <!-- Task Type, Comments -->
-            <div class="form-group">
-                <label for="taskType">Task Type *</label>
-                <select class="form-control" id="taskType" required>
-                    <option value="" disabled selected>Select a task...</option>
-                    <option value="Groceries">Groceries</option>
-                    <option value="Transportation">Transportation</option>
-                    <option value="Companionship">Companionship</option>
-                    <option value="Tech Support">Tech Support</option>
-                    <option value="Household Chores">Household Chores</option>
-                     <option value="Medical Appointment">Medical Appointment</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="comments">Comments / Details</label>
-                <textarea class="form-control" id="comments" rows="3" placeholder="Any specific instructions or details..."></textarea>
-            </div>
+    <main class="container my-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
 
-             <hr>
-             <h5>Optional: Schedule and Location</h5>
+                <!-- The Card -->
+                <div class="request-card p-4 p-md-5">
+                    <h2 class="text-center mb-4">Create Help Request</h2>
 
-             <div class="form-group">
-                 <label for="scheduledDateTime">Schedule for Later (Date and Time)</label>
-                 <input type="datetime-local" class="form-control" id="scheduledDateTime">
-             </div>
+                     <!-- Overall Message Area -->
+                     <div id="message" class="alert alert-dismissible fade show" role="alert" style="display: none;">
+                         <span id="messageText"></span>
+                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                     </div>
 
-             <div class="form-group"> <!-- Add position: relative -->
-                 <label for="addressInput">Location Address (where help is needed)</label>
-                 <input type="text" class="form-control" id="addressInput" placeholder="Start typing address..." autocomplete="off"> <!-- autocomplete off -->
-                 <!-- Suggestions Dropdown -->
-                 <ul id="suggestions" class="suggestions-list" style="display: none;"></ul>
-             </div>
+                    <!-- The Form (wrapping all steps) -->
+                    <form id="requestForm" class="needs-validation" novalidate>
 
-             <!-- Map container - Changed ID -->
-             <div id="myMap"></div>
+                        <!-- Step 1: Basic Details -->
+                        <div class="form-step active" id="step-1">
+                            <h5 class="mb-3 text-primary">Step 1: Request Details</h5>
+                            <div class="mb-3"> <!-- Bootstrap 5 uses mb-3 for margin -->
+                                <label for="taskType" class="form-label">Task Type *</label>
+                                <select class="form-select" id="taskType" required>
+                                    <option value="" disabled selected>Select a task...</option>
+                                    <option value="Groceries">Groceries</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Companionship">Companionship</option>
+                                    <option value="Tech Support">Tech Support</option>
+                                    <option value="Household Chores">Household Chores</option>
+                                    <option value="Medical Appointment">Medical Appointment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a task type.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="comments" class="form-label">Comments / Details</label>
+                                <textarea class="form-control" id="comments" rows="4" placeholder="Any specific instructions or details... (Optional, but helps us find a better match!)"></textarea>
+                                <div class="form-text">Providing more details helps the AI understand your needs.</div>
+                            </div>
 
-            <!-- Hidden fields to store final selected location data -->
-            <input type="hidden" id="latitude">
-            <input type="hidden" id="longitude">
-            <input type="hidden" id="formattedAddress">
+                            <!-- Step 1 Navigation -->
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-primary" id="nextButton">Next <i class="fas fa-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
 
+                        <!-- Step 2: Optional Details -->
+                        <div class="form-step" id="step-2">
+                             <h5 class="mb-3 text-primary">Step 2: Optional Schedule & Location</h5>
+                            <div class="mb-3">
+                                <label for="scheduledDateTime" class="form-label">Schedule for Later (Date and Time)</label>
+                                <input type="datetime-local" class="form-control" id="scheduledDateTime">
+                            </div>
 
-            <button type="submit" class="btn btn-primary">Submit Request</button>
-            <a href="/home" class="btn btn-secondary">Cancel</a>
-        </form>
-    </div>
+                            <div class="mb-3 position-relative"> <!-- position-relative for suggestions -->
+                                <label for="addressInput" class="form-label">Location Address (where help is needed)</label>
+                                <input type="text" class="form-control" id="addressInput" placeholder="Start typing address or click map..." autocomplete="off">
+                                <!-- Suggestions Dropdown -->
+                                <ul id="suggestions" class="suggestions-list" style="display: none;"></ul>
+                            </div>
 
-    <!-- Dependencies (jQuery, Popper, Bootstrap - keep if used elsewhere) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+                            <!-- Map container -->
+                            <div id="myMap" class="mb-3"></div>
 
+                            <!-- Hidden fields MUST be inside the form -->
+                            <input type="hidden" id="latitude">
+                            <input type="hidden" id="longitude">
+                            <input type="hidden" id="formattedAddress">
+
+                            <!-- Step 2 Navigation -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" id="backButton"><i class="fas fa-arrow-left me-1"></i> Back</button>
+                                <button type="submit" class="btn btn-success" id="submitButton"><i class="fas fa-check me-1"></i> Submit Request</button>
+                            </div>
+                        </div>
+                    </form> <!-- End Form -->
+                </div> <!-- End Card -->
+            </div> <!-- End Col -->
+        </div> <!-- End Row -->
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <!-- Azure Maps SDK -->
     <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
-
     <!-- Your Custom JS -->
-    <script src="/js/createRequest.js"></script>
-
+    <script src="/js/createRequest.js"></script> <!-- Link to the updated JS below -->
+     <!-- Optional: Common script -->
+     <!-- <script src="/js/common.js"></script> -->
 </body>
 </html>
