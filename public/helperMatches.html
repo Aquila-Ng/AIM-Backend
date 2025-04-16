@@ -3,136 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pending Help Offers</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Pending Help Offers - ConnectAI</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Azure Maps CSS -->
     <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" type="text/css">
     <style>
-        .card {
-            border-radius: 0.8rem;
-            margin-bottom: 1rem;
-             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-             cursor: pointer; /* Indicate clickable */
-             transition: transform 0.2s ease-in-out;
+        body {
+            padding-top: 70px; /* Adjust if navbar height differs */
+            background-color: #f8f9fa;
         }
-         .card:hover {
-             transform: translateY(-3px);
-         }
-         /* Style for the map inside the modal */
-         #modalMap {
-             height: 250px; /* Adjust as needed */
-             width: 100%;
-             margin-top: 1rem;
-             border: 1px solid #ccc;
-         }
+        .navbar {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
+        }
+        .card {
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        /* Style for the map inside the modal */
+        #modalMapContainer { min-height: 200px; }
+        #modalMap {
+            height: 250px;
+            width: 100%;
+            border: 1px solid #dee2e6; /* Use BS variable */
+            border-radius: 0.375rem;
+        }
     </style>
 </head>
 <body>
-    <!-- Navbar (keep as is or adapt from previous examples) -->
+    <!-- Navbar Placeholder (Using Bootstrap 5 classes) -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <a class="navbar-brand" href="/home">ConnectAI</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mr-auto">
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">Requests</a>
-                </li> -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Requests</a>
-                    <div class="dropdown-menu" aria-labelledby="userDropdown" style="right: auto; left: auto; width: 50px;">
-                        <a class="dropdown-item" href="/createRequest">Create New</a>
-                        <a class="dropdown-item" href="/requestHistory">History</a>
-                        <a class="dropdown-item" href="/helperMatches">Matches</a>
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/chatList">Chats</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-user-circle"></i> John Doe
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="userDropdown" style="width: 50px;">
-                        <a class="dropdown-item" href="/profile">Profile</a>
-                        <a class="dropdown-item" href="#" id="logoutButton">Logout</a>
-                    </div>
-                </li>
-            </ul>
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/home">ConnectAI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="requestsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Requests</a>
+                        <ul class="dropdown-menu" aria-labelledby="requestsDropdown" style="right: auto; left: auto; width: auto;">
+                            <li><a class="dropdown-item" href="/createRequest">Create New</a></li>
+                            <li><a class="dropdown-item" href="/requestHistory">History</a></li>
+                            <li><a class="dropdown-item" href="/helperMatches">Matches</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/chatList">Chats</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i> 
+                            <span id="navbarUsername">John Doe</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="width: auto;">
+                            <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                            <li><a class="dropdown-item" href="#" id="logoutButton">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
+    <!-- /Navbar Placeholder -->
 
-    <div class="container mt-5 pt-5">
-        <h2>Pending Help Offers</h2>
-        <div id="message" class="mt-3"></div>
-        <div id="matchList" class="mt-3">
-            <!-- Match cards will be loaded here -->
-             <div class="text-center" id="loading">Loading offers...</div>
+    <main class="container mt-4">
+        <h2 class="mb-4">Pending Help Offers</h2>
+
+        <!-- Message Area -->
+        <div id="message" class="alert alert-dismissible fade show" role="alert" style="display: none;">
+            <span id="messageText"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+       </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-center text-muted py-5" style="display: none;">
+             <div class="spinner-border text-primary" role="status">
+                 <span class="visually-hidden">Loading offers...</span>
+             </div>
+             <p class="mt-2">Loading offers...</p>
         </div>
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center" id="pagination">
-                <!-- Pagination controls -->
+
+        <!-- Match List -->
+         <div id="matchList" class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+             <!-- Match cards dynamically loaded here -->
+             <!-- Example Card Structure (for reference):
+            <div class="col">
+                <div class="card h-100" data-bs-toggle="modal" data-bs-target="#matchDetailModal" data-match-info='{...json...}'>
+                     <div class="card-body">
+                         <h6 class="card-title">Request: Task Type</h6>
+                         <p class="card-text">From: Requester Name</p>
+                         <p class="card-text text-muted"><small>Offered: Formatted Date</small></p>
+                     </div>
+                </div>
+             </div>
+             -->
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Match list navigation" id="paginationContainer" class="d-flex justify-content-center">
+            <ul class="pagination" id="pagination">
+                <!-- Pagination items dynamically loaded here -->
             </ul>
         </nav>
-    </div>
+    </main>
 
-    <!-- Bootstrap Modal for Match Details -->
+    <!-- Bootstrap Modal for Match Details (Using Bootstrap 5 attributes) -->
     <div class="modal fade" id="matchDetailModal" tabindex="-1" aria-labelledby="matchDetailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg"> <!-- Optional: Make modal larger for map -->
+        <div class="modal-dialog modal-lg modal-dialog-centered"> <!-- Centered modal -->
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="matchDetailModalLabel">Request Details</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h5 class="modal-title fs-5" id="matchDetailModalLabel">Request Details</h5>
+                    <!-- Updated close button -->
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="matchDetailBody">
-                    <!-- Details will be loaded here -->
-                    <div class="row">
-                        <div class="col-md-6"> <!-- Details Column -->
+                    <div class="row g-3"> <!-- Added gap between columns -->
+                        <!-- Left Column: Text Details -->
+                        <div class="col-md-7">
                              <p><strong>Task:</strong> <span id="modalTaskType"></span></p>
-                             <p><strong>Requester Age:</strong>
-                                 <!-- <span id="modalRequesterName"></span> -->
-                                  (Age: <span id="modalRequesterAge"></span>)
-                             </p>
-                             <p><strong>Details:</strong> <span id="modalComments"></span></p>
-                             <p><strong>Date & Time:</strong> <span id="modalDateTime"></span></p>
+                             <p><strong>Requester:</strong> <span id="modalRequesterName"></span> (Age: <span id="modalRequesterAge"></span>)</p>
+                             <p><strong>Details:</strong> <span id="modalComments" style="white-space: pre-wrap;"></span></p> <!-- Preserve whitespace -->
+                             <hr>
+                             <p><strong>Scheduled:</strong> <span id="modalScheduledTime"></span></p>
+                             <p><strong>Location:</strong> <span id="modalLocationText"></span></p> <!-- Renamed for clarity -->
+                             <p><em>Your Compatibility Score:</em> <span id="modalScore" class="fw-bold"></span></p>
                         </div>
-                         <div class="col-md-6"> <!-- Map Column -->
-                             <p><strong>Location:</strong> <span id="modalLocation"></span></p>
-                             <!-- Map container ADDED HERE -->
-                             <div id="modalMap">
-                                 <div id="mapMessage" class="text-muted text-center" style="padding-top: 50px;">Map loading or location not specified...</div>
+                         <!-- Right Column: Map -->
+                         <div class="col-md-5">
+                             <h6>Request Location</h6>
+                             <div id="modalMapContainer">
+                                 <div id="modalMap" style="display: none;"></div>
+                                 <div id="modalMapMessage" class="text-muted text-center py-3 border rounded bg-light">
+                                      Map loading or location not specified...
+                                 </div>
                              </div>
                          </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger" id="declineButton">Decline</button>
-                    <button type="button" class="btn btn-success" id="acceptButton">Accept</button>
+                <div class="modal-footer justify-content-between">
+                    <!-- data-bs-dismiss added to close button -->
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <div> <!-- Group action buttons -->
+                         <button type="button" class="btn btn-outline-danger me-2" id="declineButton">Decline</button>
+                         <button type="button" class="btn btn-success" id="acceptButton">Accept</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
 
-    <!-- Dependencies -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script> <!-- Needs full jQuery for modal events -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- If using fontawesome icons -->
-
-
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <!-- Azure Maps SDK -->
     <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
-
     <!-- Your Custom JS -->
     <script src="/js/helperMatches.js"></script>
-    <!-- Optional: Add a shared script for common things like navbar user/logout -->
-    <!-- <script src="/js/common.js"></script> -->
+     <!-- Optional: Common script -->
+     <!-- <script src="/js/common.js"></script> -->
 </body>
 </html>

@@ -47,11 +47,10 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/chatList">Chats</a>
                     </li>
-                </ul>
-                <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle"></i> John Doe
+                            <i class="fas fa-user-circle"></i> 
+                            <span id="navbarUsername">John Doe</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="width: auto;">
                             <li><a class="dropdown-item" href="/profile">Profile</a></li>
@@ -65,7 +64,7 @@
     <!-- /Navbar Placeholder -->
 
     <main class="container mt-4">
-        <h2 class="mb-4">My Chats</h2>
+        <h2 class="mb-4">Chats</h2>
 
         <!-- Message Area for Loading/Errors -->
         <div id="message" class="alert alert-dismissible fade show" role="alert" style="display: none;">
