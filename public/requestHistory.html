@@ -8,45 +8,56 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Azure Maps CSS -->
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" type="text/css">
     <style>
         body {
-            padding-top: 70px; /* Adjusted for fixed navbar */
-            background-color: #f8f9fa; /* Light background */
+            padding-top: 70px;
+            background-color: #f8f9fa;
         }
         .navbar {
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
         }
         .card {
-            border-radius: 0.75rem; /* Slightly less rounded */
+            border-radius: 0.75rem;
             margin-bottom: 1rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.07);
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            cursor: pointer; /* Indicate clickable */
+            cursor: pointer;
         }
          .card:hover {
              transform: translateY(-3px);
              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
          }
         .status-badge {
-            font-size: 0.8em; /* Slightly smaller badge */
+            font-size: 0.8em;
             padding: 0.4em 0.7em;
             font-weight: 500;
         }
-        /* Status Badge Colors (Using Bootstrap 5 background utility classes) */
+        /* Status Badge Colors */
         .status-open, .status-matching { background-color: var(--bs-warning); color: var(--bs-dark); }
-        .status-awaiting-acceptance { background-color: var(--bs-info); color: var(--bs-dark); } /* Updated class name */
+        .status-awaiting-acceptance { background-color: var(--bs-info); color: var(--bs-dark); }
         .status-matched { background-color: var(--bs-success); color: var(--bs-white); }
         .status-completed { background-color: var(--bs-secondary); color: var(--bs-white); }
         .status-cancelled, .status-expired, .status-matching-failed,
-        .status-no-helpers-found, .status-no-matches-found { background-color: var(--bs-danger); color: var(--bs-white); } /* Updated class names */
+        .status-no-helpers-found, .status-no-matches-found { background-color: var(--bs-danger); color: var(--bs-white); }
+        .status-unknown { background-color: var(--bs-light); color: var(--bs-dark); border: 1px solid #ccc; }
 
-         /* Ensure content doesn't overflow */
         .card-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } /* Limit details preview */
+        .card-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* Map in Modal */
+        #modalMapContainer { min-height: 200px; } /* Ensure container has height */
+         #modalMap {
+             height: 200px; /* Adjust height as needed */
+             width: 100%;
+             border: 1px solid #ccc;
+             border-radius: 0.375rem;
+         }
     </style>
 </head>
 <body>
-    <!-- Navbar Placeholder (Assume your standard navbar is here) -->
+    <!-- Navbar Placeholder -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="/home">ConnectAI</a>
@@ -83,47 +94,14 @@
     <!-- /Navbar Placeholder -->
 
     <main class="container mt-4">
-        <h2 class="mb-4">My Request History</h2>
-
-        <!-- Message Area for Loading/Errors -->
-        <div id="message" class="alert alert-dismissible fade show" role="alert" style="display: none;">
-             <span id="messageText"></span>
-             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="loading" class="text-center text-muted py-5" style="display: none;">
-             <div class="spinner-border text-primary" role="status">
-                 <span class="visually-hidden">Loading requests...</span>
-             </div>
-             <p class="mt-2">Loading requests...</p>
-        </div>
-
-        <!-- Request List - Cards trigger modal -->
+        <h2 class="mb-4">Request History</h2>
+        <div id="message" class="alert alert-dismissible fade show" role="alert" style="display: none;">...</div>
+        <div id="loading" class="text-center text-muted py-5" style="display: none;">...</div>
         <div id="requestList" class="row row-cols-1 row-cols-md-2 g-3 mb-4">
-            <!-- Request cards will be dynamically inserted here -->
-            <!-- Example Card Structure (for reference):
-            <div class="col">
-                <div class="card h-100" data-bs-toggle="modal" data-bs-target="#requestDetailModal" data-request-info='{...json...}'>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                             <h6 class="card-title mb-0 me-2">Request #ID: Task Type</h6>
-                             <span class="badge rounded-pill status-badge status-some-status">STATUS</span>
-                        </div>
-                        <p class="card-text text-muted mb-2">Details preview limited to two lines...</p>
-                        <small class="text-muted d-block">Created: Formatted Date</small>
-                        <small class="text-muted d-block">Helper: Helper Name (if matched)</small>
-                    </div>
-                </div>
-            </div>
-             -->
+            <!-- Request cards dynamically loaded -->
         </div>
-
-        <!-- Pagination -->
         <nav aria-label="Request history navigation" id="paginationContainer" class="d-flex justify-content-center">
-            <ul class="pagination" id="pagination">
-                <!-- Pagination items will be dynamically inserted here -->
-            </ul>
+             <ul class="pagination" id="pagination">...</ul>
         </nav>
     </main>
 
@@ -136,23 +114,36 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="requestDetailBody">
-                    <!-- Details will be dynamically populated here -->
-                    <p><strong>Request ID:</strong> <span id="modalRequestId" class="text-muted"></span></p>
-                    <p><strong>Task Type:</strong> <span id="modalTaskType"></span></p>
-                    <p><strong>Status:</strong> <span id="modalStatusBadge" class="badge rounded-pill"></span></p>
-                    <hr>
-                    <p><strong>Details:</strong></p>
-                    <p><span id="modalComments" style="white-space: pre-wrap;"></span></p> <!-- Preserve whitespace in comments -->
-                    <hr>
-                    <p><strong>Created At:</strong> <span id="modalCreatedAt"></span></p>
-                    <p><strong>Scheduled For:</strong> <span id="modalScheduledTime"></span></p>
-                    <p><strong>Location:</strong> <span id="modalLocation"></span></p>
-                    <hr>
-                    <p><strong>Matched Helper:</strong> <span id="modalHelperInfo"></span></p>
+                    <div class="row">
+                        <!-- Left Column: Text Details -->
+                        <div class="col-md-7">
+                             <p><strong>Request ID:</strong> <span id="modalRequestId" class="text-muted"></span></p>
+                             <p><strong>Task Type:</strong> <span id="modalTaskType"></span></p>
+                             <p><strong>Status:</strong> <span id="modalStatusBadge" class="badge rounded-pill"></span></p>
+                             <hr>
+                             <p class="mb-1"><strong>Details:</strong></p>
+                             <p><span id="modalComments" style="white-space: pre-wrap;"></span></p>
+                             <hr>
+                             <p><strong>Created At:</strong> <span id="modalCreatedAt"></span></p>
+                             <p><strong>Scheduled For:</strong> <span id="modalScheduledTime"></span></p>
+                             <p><strong>Matched Helper:</strong> <span id="modalHelperInfo"></span></p>
+                        </div>
+                        <!-- Right Column: Location Info & Map -->
+                        <div class="col-md-5">
+                             <h6>Location</h6>
+                             <p><small id="modalLocation" class="text-muted"></small></p>
+                             <!-- Map Container Added Here -->
+                             <div id="modalMapContainer">
+                                 <div id="modalMap" style="display: none;"></div>
+                                 <div id="modalMapMessage" class="text-muted text-center py-3 border rounded bg-light">
+                                      Location not specified.
+                                 </div>
+                             </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <!-- Chat button initially hidden -->
                     <button type="button" class="btn btn-success" id="modalGoToChatBtn" style="display: none;">
                         <i class="fas fa-comments me-1"></i> Go to Chat
                     </button>
@@ -161,12 +152,11 @@
         </div>
     </div>
 
-
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <!-- Azure Maps SDK -->
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
     <!-- Your Custom JS -->
     <script src="/js/requestHistory.js"></script>
-     <!-- Optional: Common script -->
-     <!-- <script src="/js/common.js"></script> -->
 </body>
 </html>

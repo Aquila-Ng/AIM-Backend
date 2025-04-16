@@ -110,7 +110,7 @@ async function findRequestsByRequester(userId, page = 1, limit = 10) {
     const query = `
         SELECT
             r.id, r.task_type, r.comments, r.status, r.created_at, r.updated_at,
-            r.scheduled_datetime, r.location_address,
+            r.scheduled_datetime, r.location_address, r.location_longitude, r.location_latitude,
             u.first_name AS helper_first_name,
             u.last_name AS helper_last_name
         FROM help_requests r
