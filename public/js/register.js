@@ -1,42 +1,81 @@
-const form = document.getElementById('registerForm');
-const email = document.getElementById('email');
-const password = document.getElementById('password');
-const confirmPassword = document.getElementById('confirmPassword');
-
-// Regular expression for email validation (basic pattern)
+const form = document.getElementById('registrationForm');
+const errorMessage = document.getElementById('errorMessage');
 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
-form.addEventListener('submit', function(event) {
+function nextStep(step) {
+    if (!validateStep(step)) return;
+    document.getElementById('step' + step).style.display = 'none';
+    document.getElementById('step' + (step + 1)).style.display = 'block';
+}
+
+function prevStep(step) {
+    document.getElementById('step' + step).style.display = 'none';
+    document.getElementById('step' + (step - 1)).style.display = 'block';
+}
+
+function validateStep(step) {
     let isValid = true;
+    const elements = document.querySelectorAll(`#step${step} [required]`);
 
-    // Reset all invalid states
-    [email, password, confirmPassword].forEach(input => {
-        input.classList.remove('is-invalid');
+    elements.forEach(element => {
+        element.classList.remove('is-invalid');
+        if (!element.value) {
+            element.classList.add('is-invalid');
+            isValid = false;
+        }
+        if (element.id === 'email' && !element.value.match(emailRegex)) {
+            element.classList.add('is-invalid');
+            isValid = false;
+        }
+        if (element.id === 'password' && element.value.length < 8) {
+            element.classList.add('is-invalid');
+            isValid = false;
+        }
     });
+    return isValid;
+}
 
-    // Email Validation: Check if the email matches the regex format
-    if (!email.value.match(emailRegex)) {
-        email.classList.add('is-invalid');
-        email.nextElementSibling.textContent = "Please provide a valid email address.";
-        isValid = false;
-    }
+form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    if (!validateStep(3)) return;
 
-    // Password Validation: Check if the password is greater than 8 characters
-    if (password.value.length < 8) {
-        password.classList.add('is-invalid');
-        password.nextElementSibling.textContent = "Password must be at least 8 characters long.";
-        isValid = false;
-    }
+    const formData = {
+        firstName: document.getElementById('firstName').value,
+        lastName: document.getElementById('lastName').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        age: document.getElementById('age').value,
+        sex: document.getElementById('sex').value,
+        height: document.getElementById('height').value,
+        weight: document.getElementById('weight').value,
+        blindVision: document.querySelector('input[name="blindVision"]:checked').value,
+        deafHearing: document.querySelector('input[name="deafHearing"]:checked').value,
+        difficultyWalking: document.querySelector('input[name="difficultyWalking"]:checked').value,
+    };
 
-    // Confirm Password Validation: Check if the passwords match
-    if (password.value !== confirmPassword.value) {
-        confirmPassword.classList.add('is-invalid');
-        confirmPassword.nextElementSibling.textContent = "Passwords do not match.";
-        isValid = false;
-    }
-
-    // If form is invalid, prevent submission
-    if (!isValid) {
-        event.preventDefault();
-    }
+    fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+            'Content-type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.json().then(err => {
+                throw err;
+            });
+        }
+        return res.json();
+    })
+    .then(data => {
+        errorMessage.className = 'alert alert-success';
+        errorMessage.innerHTML = 'Registration successful! Proceed to <a href="/login" class="alert-link">Login</a>';
+        errorMessage.style.display = 'block';
+    })
+    .catch(err => {
+        console.error('Registration error: ', err);
+        errorMessage.textContent = err.message || 'An error occurred during registration';
+        errorMessage.style.display = 'block';
+    });
 });
