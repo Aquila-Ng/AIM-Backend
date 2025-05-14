@@ -22,6 +22,7 @@ const SEX_MATCH_SCORE = 3;        // Score for matching requester's sex preferen
 const BMI_HEALTHY_BONUS = 2;      // Bonus for helper having BMI in healthy range
 const LLM_SEX_MATCH_SCORE = 3;    // Bonus if helper sex matches LLM ideal sex
 const LLM_CAPABILITY_MATCH_SCORE = 2; // Bonus per capability match with LLM profile (e.g., LLM wants no walking diff, helper has none)
+const LLM_CAPABILITY_MISMATCH_PENALTY = 5; // Bonus per capability match with LLM profile (e.g., LLM wants no walking diff, helper has none)
 
 // Define which user profile fields represent needs
 const NEED_FIELDS = [
@@ -137,8 +138,6 @@ function calculateCompatibilityScore(requesterProfile, helperProfile, idealHelpe
          console.log(`Could not calculate BMI for helper ${helperProfile.id}.`);
     }
 
-
-    // --- 5. LLM Profile Scoring (If available) ---
    // --- 5. LLM Profile Scoring (If available) ---
     if (idealHelperProfile) {
         console.log(`Applying LLM scoring for helper ${helperProfile.id}`);
@@ -164,7 +163,7 @@ function calculateCompatibilityScore(requesterProfile, helperProfile, idealHelpe
             }
         } else {
             // Log why the comparison was skipped
-             console.log(`   - Skipping LLM Sex Match because ideal sex (${idealHelperProfile.sex}) or helper sex (${helperProfile.sex}) is missing or not a string.`);
+             console.log(` - Skipping LLM Sex Match because ideal sex (${idealHelperProfile.sex}) or helper sex (${helperProfile.sex}) is missing or not a string.`);
         }
 
         // LLM Capability Match (Helper should NOT have the difficulty if LLM says False)
@@ -176,10 +175,11 @@ function calculateCompatibilityScore(requesterProfile, helperProfile, idealHelpe
                 // Optional: Add score if LLM wants difficulty and helper *has* it (e.g., shared experience?)
                 // score += LLM_SHARED_DIFFICULTY_SCORE;
                 // console.log(` - LLM Shared Difficulty Match Bonus Added for: ${llmField}`);
-            } else if (idealHelperProfile[llmField] === false && helperProfile.hasOwnProperty(helperField) && helperProfile[helperField] === true) {
+            } 
+            else if (idealHelperProfile[llmField] === false && helperProfile.hasOwnProperty(helperField) && helperProfile[helperField] === true) {
                 // Optional: Penalize if LLM wants no difficulty but helper HAS it
-                // score -= LLM_CAPABILITY_MISMATCH_PENALTY;
-                 console.log(` - LLM Capability Mismatch (Penalty potential) for: ${llmField}`);
+                score -= LLM_CAPABILITY_MISMATCH_PENALTY;
+                console.log(` - LLM Capability Mismatch (Penalty potential) for: ${llmField}`);
             }
         };
 

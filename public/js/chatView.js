@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  currentUserId = user.id; // Set current user ID
                  const userNameElement = document.getElementById('navbarUsername');
                  if (userNameElement) {
-                     userNameElement.textContent = user.first_name || user.email;
+                    userNameElement.textContent = `${user.first_name || user.email}`;
                  }
              } else if (response.status === 401 || response.status === 403) {
                  window.location.href = '/login';

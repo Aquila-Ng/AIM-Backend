@@ -199,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-     // --- Navbar User/Logout (Example - reuse or move to common.js) ---
      async function setupNavbar() {
          try {
              const response = await fetch('/api/users/me');
